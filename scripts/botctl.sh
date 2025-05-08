@@ -24,8 +24,8 @@ case "$1" in
         fi
         log INFO "Starting $SESSION..."
         bash "$SESSION_PATH" &
-        sleep 0.2  # Give the bot a moment to start writing logs
-        timeout 15s tail -n 0 -F "$LOG_PATH" | while read -r line; do
+        sleep 0.2
+        timeout 10s tail -n 0 -F "$LOG_PATH" | while read -r line; do
             echo "$line"
             if [[ "$line" =~ Synced\ [0-9]+\ commands ]]; then
                 break
@@ -57,6 +57,6 @@ case "$1" in
         fi
         ;;
     *)
-        log INFO "Usage: $0 {start|stop|log}"
+        log ERROR "Usage: $0 {start|stop|log}"
         ;;
 esac 
