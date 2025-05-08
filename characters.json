@@ -1,39 +1,4 @@
 {
-  "312447437359022082": {
-    "Name": "312447437359022082",
-    "Career": "Roughneck",
-    "Gender": "",
-    "Age": 0,
-    "Attributes": {
-      "Strength": 4,
-      "Agility": 4,
-      "Wits": 4,
-      "Empathy": 2
-    },
-    "Skills": {
-      "Heavy_Machinery": 5,
-      "Stamina": 3,
-      "Close_Combat": 2,
-      "Mobility": 0,
-      "Piloting": 0,
-      "Ranged_Combat": 0,
-      "Observation": 0,
-      "Comtech": 0,
-      "Survival": 0,
-      "Manipulation": 0,
-      "Command": 0,
-      "Medical_Aid": 0
-    },
-    "Talent": "True Grit",
-    "Agenda": "Downtime matters. If you can grab a can of Aspen beer (or even Souta Dry, though only if you're desperate) and some time alone, you're happy.",
-    "Gear": [
-      "Seegson C-Series Magnetic Tape Recorder (x1) (x1) (x1) (x1) (x1)",
-      "Stash of hard liquor (x1) (x1) (x1) (x1) (x1)",
-      "Crucifix or other religious symbol (x1) (x1) (x1) (x1)"
-    ],
-    "Signature Item": "Crucifix or other religious symbol",
-    "Cash": 500
-  },
   "203249116795371520": {
     "Name": "Bob Waters",
     "Career": "Colonial Marine",
@@ -62,11 +27,46 @@
     "Talent": "Past the Limit",
     "Agenda": "You are a decorated hero, you need to defend your reputation. At all costs.",
     "Gear": [
-      "M41A Pulse Rifle (x1)",
-      "2 G2 Electroshock Grenades (x1)",
-      "Bullet that you survived"
+      "M41A Pulse Rifle (x1) (x1) (x1)",
+      "2 G2 Electroshock Grenades (x1) (x1) (x1)",
+      "Bullet that you survived (x1) (x1)"
     ],
     "Signature Item": "Bullet that you survived",
+    "Cash": 200
+  },
+  "312447437359022082": {
+    "Name": "Ringle Fergus",
+    "Career": "Scientist",
+    "Gender": "Male",
+    "Age": 23,
+    "Attributes": {
+      "Strength": 4,
+      "Agility": 3,
+      "Wits": 5,
+      "Empathy": 2
+    },
+    "Skills": {
+      "Heavy_Machinery": 1,
+      "Stamina": 1,
+      "Close_Combat": 0,
+      "Mobility": 0,
+      "Piloting": 1,
+      "Ranged_Combat": 1,
+      "Observation": 3,
+      "Comtech": 1,
+      "Survival": 1,
+      "Manipulation": 0,
+      "Command": 1,
+      "Medical_Aid": 0
+    },
+    "Talent": "Analysis",
+    "Agenda": "You find it hard to delegate to others, even if it means taking on extra work.",
+    "Gear": [
+      "M314 Motion Tracker (x1)",
+      "Personal Medkit (x1)",
+      "Unfinished scientific paper"
+    ],
+    "Signature Item": "Unfinished scientific paper",
     "Cash": 200
   }
 }
