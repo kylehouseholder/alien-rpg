@@ -1,0 +1,15 @@
+{
+	"Weapons": {
+		"Ranged": {
+			"Pistols": {
+				"M4A3 Service Pistol": {
+					"weight": 0.5,
+					"range": "medium",
+					"damage": 1,
+					"bonus": 2
+				}
+			}
+		},
+		"Throwable": {}
+	}
+}

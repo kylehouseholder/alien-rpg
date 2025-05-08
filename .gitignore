@@ -1,0 +1,24 @@
+player-data/
+references/
+venv/
+env/
+ENV/
+
+__pycache__/
+*.py[cod]
+*$py.class
+
+.env
+*.secret
+
+.vscode/
+.idea/
+
+dist/
+build/
+*.egg-info/
+
+*.log
+
+# misc files
+example.txt
