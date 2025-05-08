@@ -3,7 +3,8 @@
 SESSION="alien-bot"
 VENV_PATH="venv/bin/activate"
 BOT_CMD="python -u main.py"
-LOG_PATH="scripts/bot.log"
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+LOG_PATH="$SCRIPT_DIR/bot.log"
 
 if tmux has-session -t "$SESSION" 2>/dev/null; then
     echo "$SESSION already exists."

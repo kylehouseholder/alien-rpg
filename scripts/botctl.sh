@@ -1,9 +1,9 @@
 #!/bin/bash
 
 SESSION="alien-bot"
-SESSION_SCRIPT="scripts/sessionBot.sh"
-SESSION_PATH="$(dirname "$0")/$SESSION_SCRIPT"
-LOG_PATH="scripts/bot.log"
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+SESSION_PATH="$SCRIPT_DIR/sessionBot.sh"
+LOG_PATH="$SCRIPT_DIR/bot.log"
 LINES=10
 
 log() {
@@ -25,12 +25,12 @@ case "$1" in
         log INFO "Starting $SESSION..."
         bash "$SESSION_PATH" &
         sleep 0.2  # Give the bot a moment to start writing logs
-        while read -r line; do
+        timeout 15s tail -n 0 -F "$LOG_PATH" | while read -r line; do
             echo "$line"
             if [[ "$line" =~ Synced\ [0-9]+\ commands ]]; then
                 break
             fi
-        done < <(tail -F -n 0 "$LOG_PATH")
+        done
         ;;
     stop)
         if tmux has-session -t "$SESSION" 2>/dev/null; then
