@@ -27,14 +27,14 @@
     "Talent": "Past the Limit",
     "Agenda": "You are a decorated hero, you need to defend your reputation. At all costs.",
     "Gear": [
-      "M41A Pulse Rifle (x1) (x1) (x1) (x1)",
-      "2 G2 Electroshock Grenades (x1) (x1) (x1) (x1)",
-      "Bullet that you survived (x1) (x1) (x1)"
+      "M41A Pulse Rifle (x1) (x1) (x1) (x1) (x1)",
+      "2 G2 Electroshock Grenades (x1) (x1) (x1) (x1) (x1)",
+      "Bullet that you survived (x1) (x1) (x1) (x1)"
     ],
     "Signature Item": "Bullet that you survived",
     "Cash": 200
   },
-  "312447437359022082": {
+  "313792369861067082": {
     "Name": "Griedi Gokobler",
     "Career": "Kid",
     "Gender": "Prefer not to specify",
@@ -62,11 +62,46 @@
     "Talent": "Dodge",
     "Agenda": "You want to find an adult you can trust -- really trust.",
     "Gear": [
-      "Laser pointer (x1)",
-      "Electronic handheld game (x1)",
-      "Lunchbox covered in stickers"
+      "Laser pointer (x1) (x1)",
+      "Electronic handheld game (x1) (x1)",
+      "Lunchbox covered in stickers (x1)"
     ],
     "Signature Item": "Lunchbox covered in stickers",
     "Cash": 4
+  },
+  "312447437352212082": {
+    "Name": "Bingus Bawlshampoo",
+    "Career": "Colonial Marshal",
+    "Gender": "Male",
+    "Age": 33,
+    "Attributes": {
+      "Strength": 4,
+      "Agility": 2,
+      "Wits": 5,
+      "Empathy": 3
+    },
+    "Skills": {
+      "Heavy_Machinery": 1,
+      "Stamina": 1,
+      "Close_Combat": 1,
+      "Mobility": 1,
+      "Piloting": 0,
+      "Ranged_Combat": 2,
+      "Observation": 3,
+      "Comtech": 0,
+      "Survival": 0,
+      "Manipulation": 1,
+      "Command": 0,
+      "Medical_Aid": 0
+    },
+    "Talent": "Subdue",
+    "Agenda": "You dream of turning in the badge and settling down in peace. Work towards it.",
+    "Gear": [
+      "Binoculars (x1)",
+      "Hand radio (x1)",
+      "Photo of a loved one"
+    ],
+    "Signature Item": "Photo of a loved one",
+    "Cash": 600
   }
 }

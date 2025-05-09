@@ -11,6 +11,7 @@ from models.character import Character, Attributes, Skills
 from models.items import Item, ConsumableItem, Inventory
 from models.dice import DiceRoll
 import datetime
+import re
 
 # Load environment variables
 load_dotenv()
@@ -99,11 +100,31 @@ async def on_ready():
     except Exception as e:
         print("Sync error:", e)
 
+# DEBUG LOGGING SETUP
+DEBUG_LOG_PATH = os.path.join(os.path.dirname(__file__), "debug.log")
+
+def debug_log(msg: str):
+    ts = datetime.datetime.now().strftime("[%Y-%m-%d %H:%M:%S]")
+    with open(DEBUG_LOG_PATH, "a") as f:
+        f.write(f"{ts} {msg}\n")
+
+# Purge debug log on bot start
+with open(DEBUG_LOG_PATH, "w") as f:
+    f.write("")
+
+# --- PATCH send_dm to log all bot outputs ---
 async def send_dm(user, content, view=None):
     try:
+        debug_log(f"BOT -> {user}: {content.replace(chr(10), ' | ')}")
         return await user.send(content, view=view)
     except discord.Forbidden:
         return None
+
+# --- PATCH all user input to log responses ---
+async def wait_for_user_message(user, *args, **kwargs):
+    msg = await bot.wait_for("message", check=check_message(user), *args, **kwargs)
+    debug_log(f"USER <- {user}: {msg.content.replace(chr(10), ' | ')}")
+    return msg
 
 def check_message(user):
     return lambda m: m.author.id == user.id and isinstance(m.channel, discord.DMChannel)
@@ -179,12 +200,12 @@ Enter your character's name:
 Enter the number of your choice:```""")
     
     while True:
-        name_choice = await bot.wait_for("message", check=check_message(user))
+        name_choice = await wait_for_user_message(user)
         choice = name_choice.content.strip()
         
         if choice == "1":
             await send_dm(user, "```text\nEnter your character's full name:```")
-            name_msg = await bot.wait_for("message", check=check_message(user))
+            name_msg = await wait_for_user_message(user)
             name = name_msg.content.strip()
             break
         elif choice == "2":
@@ -206,7 +227,7 @@ Would you like to:
 Enter the number of your choice:```""")
             
             while True:
-                confirm_msg = await bot.wait_for("message", check=check_message(user))
+                confirm_msg = await wait_for_user_message(user)
                 confirm = confirm_msg.content.strip()
                 
                 if confirm == "1":
@@ -230,7 +251,7 @@ Enter the number of your choice:```""")
                     continue
                 elif confirm == "3":
                     await send_dm(user, "```text\nEnter your character's full name:```")
-                    name_msg = await bot.wait_for("message", check=check_message(user))
+                    name_msg = await wait_for_user_message(user)
                     name = name_msg.content.strip()
                     break
                 else:
@@ -253,7 +274,7 @@ Select your character's gender identity:
 Enter the number of your choice:```""")
     
     while True:
-        gender_msg = await bot.wait_for("message", check=check_message(user))
+        gender_msg = await wait_for_user_message(user)
         choice = gender_msg.content.strip()
         
         if choice == "1":
@@ -270,7 +291,7 @@ Enter the number of your choice:```""")
             break
         elif choice == "5":
             await send_dm(user, "```text\nPlease specify your gender identity:```")
-            custom_msg = await bot.wait_for("message", check=check_message(user))
+            custom_msg = await wait_for_user_message(user)
             gender = custom_msg.content.strip()
             break
         else:
@@ -279,7 +300,7 @@ Enter the number of your choice:```""")
 
     await send_dm(user, "```text\nEnter your character's age (18-120):```")
     while True:
-        age_msg = await bot.wait_for("message", check=check_message(user))
+        age_msg = await wait_for_user_message(user)
         try:
             age = int(age_msg.content.strip())
             if 18 <= age <= 120:
@@ -298,7 +319,7 @@ Age: {age}
 
 Confirm these details? (Y/N)```""")
     
-    confirm = await bot.wait_for("message", check=check_message(user))
+    confirm = await wait_for_user_message(user)
     if confirm.content.strip().upper() == "Y":
         char = Character(id=user_id, name=name, career="", gender=gender, age=age)
         creation_sessions[user_id] = char
@@ -312,108 +333,73 @@ Confirm these details? (Y/N)```""")
 async def select_career(user):
     user_id = str(user.id)
     careers = data_manager.get_playergen()["Careers"]
-    
-    await send_dm(user, r"""```text
-
->>>......CHARACTER CREATION PROTOCOL ONLINE //
->>>......STEP 01: CAREER DESIGNATION //
-
-Your designated career defines your functional classification. //
-
-This classification determines your priority access to resources, your initial compensation rating, and your survivability projection in hazardous environments. //
-
->>> NOTE:
-Personal preference may be considered during selection. /  
-However, final assignment reflects role suitability and operational necessity. //
-                  
-```""")
-    
-    await asyncio.sleep(0.3)
-
     career_names = list(careers.keys())
-    menu = "```text\n>> CAREER DESIGNATION <<\n/ Select your corporate classification /\n"
-    for i, cname in enumerate(career_names, 1):
-        menu += f"[{i}] {cname} /\n"
-    menu += "\nCommands:"
-    menu += "\n[dN] View gameplay (d)escription for career N - i.e. d9"
-    menu += "\n[dN] View detailed (p)rofile for career N - i.e. p9"
-    menu += "\n\n> PLEASE PROCEED WITH YOUR SELECTION: [NUMBER] /\n```"
-    await send_dm(user, menu)
+    
+    def get_menu():
+        menu = "```text\n>> CAREER DESIGNATION <<\n/ Select your corporate classification /\n"
+        for i, cname in enumerate(career_names, 1):
+            menu += f"[{i}] {cname} /\n"
+        menu += "\nCommands:"
+        menu += "\n[dN] View gameplay (d)escription for career N - i.e. d9"
+        menu += "\n[pN] View detailed (p)rofile for career N - i.e. p9"
+        menu += "\n\n> PLEASE PROCEED WITH YOUR SELECTION: [NUMBER] /\n```"
+        return menu
+
+    await send_dm(user, get_menu())
 
     while True:
-        msg = await bot.wait_for("message", check=check_message(user))
+        msg = await wait_for_user_message(user)
         choice = msg.content.strip()
-        
-        if '-' in choice:
-            try:
-                cmd, num = map(str.strip, choice.split('-'))
-                if not num.isdigit() or int(num) < 1 or int(num) > len(career_names):
-                    await send_dm(user, f"```text\n[ERROR] Invalid career number. Please choose 1-{len(career_names)}\n```")
-                    continue
-                    
-                career_idx = int(num) - 1
-                cname = career_names[career_idx]
-                c = careers[cname]
-                
-                if cmd == "98":
-                    details = ["```text", f">> CAREER GAMEPLAY: {cname} <<\n"]
-                    if 'gameplay_desc' in c:
-                        details.append(c['gameplay_desc'])
-                    details.append("\n> ENTER COMMAND: [NUMBER] or [98/99-N] for other careers\n```")
-                    await send_dm(user, '\n'.join(details))
-                    continue
-                    
-                elif cmd == "99":
-                    details = ["```text", f">> CAREER PROFILE: {cname} <<\n"]
-                    if 'tagline' in c:
-                        details.append(f"Tagline: {c['tagline']}\n")
-                    if 'long_description' in c:
-                        details.append(f"Description:\n{c['long_description']}\n")
-                    if 'gameplay_desc' in c:
-                        details.append(f"Gameplay:\n{c['gameplay_desc']}\n")
-                    details.append(f"Key Attribute: {c['key_attribute']}")
-                    details.append(f"Key Skills: {', '.join(c['key_skills'])}")
-                    details.append(f"Talents: {', '.join(c['talents'])}")
-                    details.append("\n> ENTER COMMAND: [NUMBER] or [98/99-N] for other careers\n```")
-                    await send_dm(user, '\n'.join(details))
-                    continue
-                    
-            except ValueError:
-                await send_dm(user, "```text\n[ERROR] Invalid command format. Use [98/99-N] where N is the career number.\n```")
+        match = re.match(r"^[dp](\d+)$", choice, re.IGNORECASE)
+        if match:
+            idx = int(match.group(1)) - 1
+            if idx < 0 or idx >= len(career_names):
+                await send_dm(user, f"```text\n[ERROR] Invalid career number. Please choose 1-{len(career_names)}\n```")
                 continue
-        
+            cname = career_names[idx]
+            c = careers[cname]
+            if choice.lower().startswith('d'):
+                details = ["```text", f">> CAREER GAMEPLAY: {cname} <<\n"]
+                if 'gameplay_desc' in c:
+                    details.append(c['gameplay_desc'])
+                details.append("\nWould you like to select this career and continue? (Y/N)\n```")
+                await send_dm(user, '\n'.join(details))
+            else:
+                details = ["```text", f">> CAREER PROFILE: {cname} <<\n"]
+                if 'tagline' in c:
+                    details.append(f"Tagline: {c['tagline']}\n")
+                if 'long_description' in c:
+                    details.append(f"Description:\n{c['long_description']}\n")
+                if 'gameplay_desc' in c:
+                    details.append(f"Gameplay:\n{c['gameplay_desc']}\n")
+                details.append(f"Key Attribute: {c['key_attribute']}")
+                details.append(f"Key Skills: {', '.join(c['key_skills'])}")
+                details.append(f"Talents: {', '.join(c['talents'])}")
+                details.append("\nWould you like to select this career and continue? (Y/N)\n```")
+                await send_dm(user, '\n'.join(details))
+            while True:
+                sel = await wait_for_user_message(user)
+                ans = sel.content.strip().upper()
+                if ans == "Y":
+                    creation_sessions[user_id].career = cname
+                    await send_dm(user, """```text\n[OK] Career selected. Proceeding to Attributes...\n```""")
+                    await asyncio.sleep(0.3)
+                    await start_attr(user)
+                    return
+                elif ans == "N":
+                    await send_dm(user, get_menu())
+                    break
+                else:
+                    await send_dm(user, "```text\n[ERROR] Please reply Y or N.\n```")
+            continue
         if choice.isdigit() and 1 <= int(choice) <= len(career_names):
             cname = career_names[int(choice)-1]
-            c = careers[cname]
-            confirm_msg = [
-                f"```text\n>> CAREER SELECTED :: {cname} <<\n"
-            ]
-            if 'gameplay_desc' in c:
-                confirm_msg.append(f"\n{c['gameplay_desc']}\n")
-            confirm_msg.append("\n/ Confirm Command? Y / N /\n```")
-            
             creation_sessions[user_id].career = cname
-            await send_dm(user, ''.join(confirm_msg))
+            await send_dm(user, f"""```text\n[OK] Career selected: {cname}. Proceeding to Attributes...\n```""")
             await asyncio.sleep(0.3)
-            confirm = await bot.wait_for("message", check=check_message(user))
-            ans = confirm.content.strip().upper()
-            if ans == "Y":
-                await send_dm(user, """```text\n[OK] Career confirmed. Proceeding to Attributes...\n```""")
-                await asyncio.sleep(0.3)
-                await start_attr(user)
-                return
-            if ans == "N":
-                menu = "```text\n>> CAREER DESIGNATION <<\n/ Select your corporate classification /\n"
-                for i, cname in enumerate(career_names, 1):
-                    menu += f"[{i}] {cname} /\n"
-                menu += "\nCommands:"
-                menu += "\n[98-N] View gameplay description for career N"
-                menu += "\n[99-N] View detailed profile for career N"
-                menu += "\n\n> PLEASE PROCEED WITH YOUR SELECTION: [NUMBER] /\n```"
-                await send_dm(user, menu)
-                continue
-            await send_dm(user, "[ERROR] Please reply Y or N.")
-            continue
+            await start_attr(user)
+            return
+        await send_dm(user, "```text\n[ERROR] Invalid input. Enter a number, dN, or pN.\n```")
 
 def format_attribute_bar(value, is_key=False):
     stars = " " + " ".join("*" * value)  
@@ -430,18 +416,15 @@ def format_skill_bar(value):
 async def start_attr(user):
     user_id = str(user.id)
     careers = data_manager.get_playergen()["Careers"]
-    
     if user_id not in creation_sessions:
         await send_dm(user, "```text\n[ERROR] No career found – start with /createcharacter.\n```")
         return
-
     char = creation_sessions[user_id]
     key_attr = careers[char.career]["key_attribute"]
-    
     attr_order = ["Strength", "Agility", "Wits", "Empathy"]
-    points_remaining = 6 
-    current_attr_index = 0 
-    
+    points_remaining = 6
+    current_attr_index = 0
+    manual_nav = False
     while True:
         current_attr = attr_order[current_attr_index]
         display = [
@@ -452,69 +435,100 @@ async def start_attr(user):
             display.extend([
                 f"As a {char.career}, your key attribute is {key_attr} (max 5)",
                 "• Minimum for any attribute is 2",
-                "• Non-key attribute max is 4",
+                "• Other attribute max: 4",
                 "• All points must be allocated\n"
             ])
-        
         display.append(f"Points remaining: {points_remaining}")
         display.append("==========================")
-        
         for attr in attr_order:
             value = getattr(char.attributes, attr.lower())
             is_key = attr == key_attr
             bar = format_attribute_bar(value, is_key)
             pointer = " <<< Add points (0-{})".format(
                 min(points_remaining, (5 if is_key else 4) - value)
-            ) if attr == current_attr else ""
+            ) if attr == current_attr and (not (value == (5 if is_key else 4))) and points_remaining > 0 else ""
             display.append(f"{attr:<8}  {value} {bar}{pointer}")
-        
         other_attrs = [a for a in attr_order if a != current_attr]
-        display.append("\nEnter letter to edit: " + 
-                      ", ".join(f"({a[0]}){a[1:]}" for a in other_attrs))
+        display.append("\nEnter letter to edit: " + ", ".join(f"({a[0]}){a[1:]}" for a in other_attrs))
         display.append("Enter R to reset value.")
-        display.append(f"Enter number to add {current_attr} (0-{min(points_remaining, (5 if current_attr == key_attr else 4) - getattr(char.attributes, current_attr.lower()))})...")
+        value = getattr(char.attributes, current_attr.lower())
+        is_key = current_attr == key_attr
+        max_add = min(points_remaining, (5 if is_key else 4) - value)
+        if (points_remaining > 0) and (not (value == (5 if is_key else 4)) or manual_nav):
+            display.append(f"Enter a number to add to {current_attr} (0-{max_add}),\nor enter 4 numbers to assign all values at once (e.g. 4, 2, 4, 4)")
+        if points_remaining > 0:
+            if points_remaining == 1:
+                display.append(f"\nYou have 1 point left to allocate.")
+            else:
+                display.append(f"\nYou have {points_remaining} points left to allocate.")
         display.append("```")
-        
         await send_dm(user, "\n".join(display))
-        
-        msg = await bot.wait_for("message", check=check_message(user))
+        msg = await wait_for_user_message(user)
         cmd = msg.content.strip().upper()
-        
-        if cmd == "R": 
+        vals = None
+        manual_nav = False
+        multi_match = re.match(r"^(\d+)[,\s]+(\d+)[,\s]+(\d+)[,\s]+(\d+)$", cmd)
+        if multi_match:
+            vals = [int(multi_match.group(i)) for i in range(1, 5)]
+        elif re.match(r"^\d{4}$", cmd):
+            vals = [int(x) for x in cmd]
+        if vals:
+            min_vals = [2, 2, 2, 2]
+            max_vals = [5 if attr == key_attr else 4 for attr in attr_order]
+            total_points = sum([v - 2 for v in vals])
+            if any(vals[i] < min_vals[i] or vals[i] > max_vals[i] for i in range(4)):
+                await send_dm(user, f"```text\n[ERROR] Invalid allocation. Each attribute must be in range (key: 2-5, others: 2-4).\n```")
+                continue
+            if total_points > 6:
+                await send_dm(user, f"```text\n[ERROR] You used more than 6 points.\n```")
+                continue
+            for i, attr in enumerate(attr_order):
+                setattr(char.attributes, attr.lower(), vals[i])
+            points_remaining = 6 - total_points
+            if points_remaining > 0:
+                for i, attr in enumerate(attr_order):
+                    value = getattr(char.attributes, attr.lower())
+                    is_key = attr == key_attr
+                    if value < (5 if is_key else 4):
+                        current_attr_index = i
+                        break
+                continue 
+        elif cmd == "R":
             current_value = getattr(char.attributes, current_attr.lower())
             if current_value > 2:
                 points_remaining += current_value - 2
                 setattr(char.attributes, current_attr.lower(), 2)
             continue
-            
-        if cmd in ["S", "A", "W", "E"]: 
+        elif cmd in ["S", "A", "W", "E"]:
             attr_map = {"S": "Strength", "A": "Agility", "W": "Wits", "E": "Empathy"}
             if attr_map[cmd] != current_attr:
                 current_attr_index = attr_order.index(attr_map[cmd])
+                manual_nav = True
             continue
-            
-        if not cmd.isdigit():
+        elif cmd.isdigit():
+            points = int(cmd)
+            value = getattr(char.attributes, current_attr.lower())
+            is_key = current_attr == key_attr
+            max_add = min(points_remaining, (5 if is_key else 4) - value)
+            if points < 0 or points > max_add:
+                await send_dm(user, f"```text\n[ERROR] Please enter a number between 0 and {max_add}\n```")
+                continue
+            setattr(char.attributes, current_attr.lower(), value + points)
+            points_remaining -= points
+            # Move pointer to next attribute that can accept points
+            for i in range(len(attr_order)):
+                idx = (current_attr_index + 1 + i) % len(attr_order)
+                value = getattr(char.attributes, attr_order[idx].lower())
+                is_key = attr_order[idx] == key_attr
+                if value < (5 if is_key else 4):
+                    current_attr_index = idx
+                    break
+            continue
+        else:
             await send_dm(user, "```text\n[ERROR] Please enter a valid command\n```")
             continue
-            
-        points = int(cmd)
-        current_value = getattr(char.attributes, current_attr.lower())
-        max_add = min(points_remaining, (5 if current_attr == key_attr else 4) - current_value)
-        
-        if points < 0 or points > max_add:
-            await send_dm(user, f"```text\n[ERROR] Please enter a number between 0 and {max_add}\n```")
-            continue
-            
-        setattr(char.attributes, current_attr.lower(), current_value + points)
-        points_remaining -= points
-        current_attr_index = (current_attr_index + 1) % len(attr_order)
-        
-        if current_attr_index == 0 and points_remaining > 0:
-            await send_dm(user, "```text\n[REMINDER] You still have points to allocate. Starting from the top...\n```")
-            await asyncio.sleep(0.3)
-        
         if points_remaining == 0:
-            while True: 
+            while True:
                 display = ["```text", ">> Final Attribute Allocation <<\n"]
                 display.append("==========================")
                 for attr in attr_order:
@@ -523,37 +537,20 @@ async def start_attr(user):
                     bar = format_attribute_bar(value, is_key)
                     display.append(f"{attr:<8}  {value} {bar}")
                 display.append("\nConfirm allocation? (Y/N)```")
-                
                 await send_dm(user, "\n".join(display))
-                
-                confirm = await bot.wait_for("message", check=check_message(user))
+                confirm = await wait_for_user_message(user)
                 if confirm.content.strip().upper() == "Y":
                     await send_dm(user, "```text\n[OK] Attributes saved. Proceeding to Skills...\n```")
                     await assign_skills(user_id)
                     return
                 elif confirm.content.strip().upper() == "N":
-                    await send_dm(user, """```text
-Which attribute would you like to reset?
-Enter letter to reset: (S)trength, (A)gility, (W)its, (E)mpathy
-Or enter X to keep current allocation```""")
-                    
-                    reset_cmd = await bot.wait_for("message", check=check_message(user))
-                    reset_attr = reset_cmd.content.strip().upper()
-                    
-                    if reset_attr == "X":
-                        continue
-                        
-                    if reset_attr in ["S", "A", "W", "E"]:
-                        attr_map = {"S": "Strength", "A": "Agility", "W": "Wits", "E": "Empathy"}
-                        attr_to_reset = attr_map[reset_attr].lower()
-                        current_value = getattr(char.attributes, attr_to_reset)
-                        points_remaining += current_value - 2
-                        setattr(char.attributes, attr_to_reset, 2)
-                        current_attr_index = attr_order.index(attr_map[reset_attr])
-                        break
-                    else:
-                        await send_dm(user, "```text\n[ERROR] Invalid selection\n```")
-                        continue
+                    await send_dm(user, """```text\n[RESET] Let's enter the values again.\n```""")
+                    # Reset all to 2
+                    for attr in attr_order:
+                        setattr(char.attributes, attr.lower(), 2)
+                    points_remaining = 6
+                    current_attr_index = 0
+                    break
                 else:
                     await send_dm(user, "```text\n[ERROR] Please enter Y or N\n```")
                     continue
@@ -561,215 +558,166 @@ Or enter X to keep current allocation```""")
 async def assign_skills(user_id):
     user = await bot.fetch_user(int(user_id))
     careers = data_manager.get_playergen()["Careers"]
-    
     if user_id not in creation_sessions:
         await send_dm(user, "```text\n[ERROR] No career found in session. Please start over with /createcharacter.\n```")
         return
-        
     char = creation_sessions[user_id]
     key_skills = careers[char.career]["key_skills"]
     all_skills = list(data_manager.get_playergen()["Skills"].keys())
     points_remaining = 10
-    current_skill = None
-    
-    def display_skills(show_available=True):
-        display = ["```text", ">> Skill Allocation <<\n"]
+    current_skill_index = 0
+    manual_nav = False
+    while True:
+        display = ["```text", ">> Key Skill Allocation <<\n"]
         display.append(f"Points remaining: {points_remaining}")
         display.append("==========================")
-        display.append("Key Skills:")
-        for skill in key_skills:
+        for i, skill in enumerate(key_skills):
             skill_attr = skill.lower().replace(" ", "_")
             value = getattr(char.skills, skill_attr)
-            display.append(f"{skill:<15} {value} {format_skill_bar(value)}")
-        
-        allocated_general = [s for s in all_skills if s not in key_skills and getattr(char.skills, s.lower().replace(" ", "_")) > 0]
-        if allocated_general:
-            for skill in allocated_general:
-                skill_attr = skill.lower().replace(" ", "_")
-                value = getattr(char.skills, skill_attr)
-                display.append(f"{skill:<15} {value} {format_skill_bar(value)}")
-        
-        if show_available:
-            available_skills = [s for s in all_skills if s not in key_skills and getattr(char.skills, s.lower().replace(" ", "_")) == 0]
-            if available_skills:
-                display.append("\nAvailable General Skills:")
-                for i, skill in enumerate(available_skills, 1):
-                    display.append(f"[{i}] {skill}")
-            
-            display.append("\nEnter R to reassign skill points.")
-            display.append("Enter skill number to add skill, or X to finish...")
-        
-        return display
-    
-    for skill in key_skills:
-        current_skill = skill
-        while True:
-            display = display_skills(show_available=False)
-            display.append(f"\nAllocating points to: {skill}")
-            display.append(f"Enter points (0-{min(points_remaining, 5)})")
-            display.append("Enter R to reset current skill")
-            display.append("```")
-            
-            await send_dm(user, "\n".join(display))
-            
-            msg = await bot.wait_for("message", check=check_message(user))
-            cmd = msg.content.strip().upper()
-            
-            if cmd == "R": 
-                skill_attr = skill.lower().replace(" ", "_")
-                current_value = getattr(char.skills, skill_attr)
-                if current_value > 0:
-                    points_remaining += current_value
-                    setattr(char.skills, skill_attr, 0)
-                continue
-            
-            if not cmd.isdigit():
-                await send_dm(user, "```text\n[ERROR] Please enter a valid number\n```")
-                continue
-            
-            points = int(cmd)
-            skill_attr = skill.lower().replace(" ", "_")
-            current_value = getattr(char.skills, skill_attr)
-            max_add = min(points_remaining, 5 - current_value)
-            
-            if points < 0 or points > max_add:
-                await send_dm(user, f"```text\n[ERROR] Please enter a number between 0 and {max_add}\n```")
-                continue
-            
-            setattr(char.skills, skill_attr, current_value + points)
-            points_remaining -= points
-            break 
-    
-    while points_remaining > 0:
-        display = display_skills(show_available=True)
+            pointer = " <<< Add points (0-{})".format(
+                min(points_remaining, 3 - value)
+            ) if i == current_skill_index and (not (value == 3)) else ""
+            display.append(f"[{i+1}] {skill:<15} {value} {format_skill_bar(value)}{pointer}")
+        display.append("\nFor each skill point remaining, you will be allowed an additional skill at the next step.")
+        display.append("Enter a number to add to the current skill, or enter 3 numbers to assign all points at once.")
+        display.append("N proceeds to general skill selection, R resets these key skills.")
         display.append("```")
-        
         await send_dm(user, "\n".join(display))
-        
-        msg = await bot.wait_for("message", check=check_message(user))
+        msg = await wait_for_user_message(user)
         cmd = msg.content.strip().upper()
-        
-        if cmd == "R":
-            display = ["```text", ">> Reassign Skills <<"]
-            display.append("\nKey Skills:")
-            for i, skill in enumerate(key_skills, 1):
-                skill_attr = skill.lower().replace(" ", "_")
-                value = getattr(char.skills, skill_attr)
-                display.append(f"[{i}] {skill}: {value}")
-            
-            general_skills = [s for s in all_skills if s not in key_skills and getattr(char.skills, s.lower().replace(" ", "_")) > 0]
-            if general_skills:
-                display.append("\nGeneral Skills:")
-                for i, skill in enumerate(general_skills, len(key_skills) + 1):
-                    skill_attr = skill.lower().replace(" ", "_")
-                    value = getattr(char.skills, skill_attr)
-                    display.append(f"[{i}] {skill}: {value}")
-            
-            display.append("\nEnter number to reset skill")
-            display.append("Enter X to cancel")
-            display.append("```")
-            
-            await send_dm(user, "\n".join(display))
-            
-            reset_cmd = await bot.wait_for("message", check=check_message(user))
-            cmd = reset_cmd.content.strip().upper()
-            
-            if cmd == "X":
+        vals = None
+        manual_nav = False
+        multi_match = re.match(r"^(\d+)[,\s]+(\d+)[,\s]+(\d+)$", cmd)
+        if multi_match:
+            vals = [int(multi_match.group(i)) for i in range(1, 4)]
+        elif re.match(r"^\d{3}$", cmd):
+            vals = [int(x) for x in cmd]
+        if vals:
+            if any(v < 0 or v > 3 for v in vals):
+                await send_dm(user, "```text\n[ERROR] Each key skill must be 0-3.\n```")
                 continue
-            
-            if cmd.isdigit():
-                idx = int(cmd)
-                all_displayed = list(key_skills) + general_skills
-                if 1 <= idx <= len(all_displayed):
-                    skill_to_reset = all_displayed[idx - 1]
-                    skill_attr = skill_to_reset.lower().replace(" ", "_")
-                    current_value = getattr(char.skills, skill_attr)
-                    points_remaining += current_value
-                    setattr(char.skills, skill_attr, 0)
-                    
-                    if skill_to_reset in key_skills:
-                        current_skill = skill_to_reset
-                        while True:
-                            display = display_skills(show_available=False)
-                            display.append(f"\nReallocating points to: {skill_to_reset}")
-                            display.append(f"Enter points (0-{min(points_remaining, 5)})")
-                            display.append("```")
-                            
-                            await send_dm(user, "\n".join(display))
-                            
-                            points_msg = await bot.wait_for("message", check=check_message(user))
-                            if not points_msg.content.isdigit():
-                                await send_dm(user, "```text\n[ERROR] Please enter a valid number\n```")
-                                continue
-                            
-                            points = int(points_msg.content)
-                            if points < 0 or points > min(points_remaining, 5):
-                                await send_dm(user, f"```text\n[ERROR] Please enter a number between 0 and {min(points_remaining, 5)}\n```")
-                                continue
-                            
-                            setattr(char.skills, skill_attr, points)
-                            points_remaining -= points
-                            break
+            if sum(vals) > points_remaining:
+                await send_dm(user, f"```text\n[ERROR] Total points exceed available ({points_remaining}).\n```")
+                continue
+            for i, skill in enumerate(key_skills):
+                skill_attr = skill.lower().replace(" ", "_")
+                setattr(char.skills, skill_attr, vals[i])
+            points_remaining = 10 - sum(vals)
+            # If all points assigned, break to general skills immediately
+            if points_remaining == 0:
+                break
+            # If not, move pointer to first skill that can accept points
+            for i, skill in enumerate(key_skills):
+                value = getattr(char.skills, skill.lower().replace(" ", "_"))
+                if value < 3:
+                    current_skill_index = i
+                    break
+            continue  # re-prompt, don't proceed
+        elif cmd == "R":
+            for skill in key_skills:
+                skill_attr = skill.lower().replace(" ", "_")
+                points_remaining += getattr(char.skills, skill_attr)
+                setattr(char.skills, skill_attr, 0)
+            current_skill_index = 0
             continue
-        
-        if cmd == "X" and points_remaining > 0:
-            await send_dm(user, "```text\n[ERROR] You must allocate all remaining points first\n```")
-            continue
-        elif cmd == "X":
+        elif cmd == "N" or cmd == "NEXT":
             break
-        
-        if not cmd.isdigit():
-            await send_dm(user, "```text\n[ERROR] Please enter a valid number\n```")
+        elif cmd.isdigit():
+            pts = int(cmd)
+            skill = key_skills[current_skill_index]
+            skill_attr = skill.lower().replace(" ", "_")
+            value = getattr(char.skills, skill_attr)
+            max_add = min(points_remaining, 3 - value)
+            if pts < 0 or pts > max_add:
+                await send_dm(user, f"```text\n[ERROR] Must be 0-{max_add}.\n```")
+                continue
+            setattr(char.skills, skill_attr, value + pts)
+            points_remaining -= pts
+            # Move pointer to next skill that can accept points
+            for i in range(len(key_skills)):
+                idx2 = (current_skill_index + 1 + i) % len(key_skills)
+                value2 = getattr(char.skills, key_skills[idx2].lower().replace(" ", "_"))
+                if value2 < 3:
+                    current_skill_index = idx2
+                    break
             continue
-        
-        choice = int(cmd)
-        available_skills = [s for s in all_skills if s not in key_skills and getattr(char.skills, s.lower().replace(" ", "_")) == 0]
-        
-        if choice < 1 or choice > len(available_skills):
-            await send_dm(user, f"```text\n[ERROR] Please enter a number between 1 and {len(available_skills)}\n```")
-            continue
-        
-        selected_skill = available_skills[choice - 1]
-        skill_attr = selected_skill.lower().replace(" ", "_")
-        if points_remaining >= 1:
-            setattr(char.skills, skill_attr, 1) 
-            points_remaining -= 1
-            await send_dm(user, f"```text\n[OK] Assigned 1 point to {selected_skill}\n```")
         else:
-            await send_dm(user, "```text\n[ERROR] Not enough points remaining\n```")
-    
-    while True:
-        display = ["```text", ">> Final Skill Allocation <<\n"]
-        display.append("==========================")
-        
-        display.append("Key Skills:")
-        for skill in key_skills:
+            await send_dm(user, "```text\n[ERROR] Enter three numbers (0-3) for key skills, a number to add to the current skill, N to proceed, or R to reset.\n```")
+            continue
+    # --- General Skills Multi-Entry ---
+    available_skills = [s for s in all_skills if s not in key_skills]
+    await send_dm(user, f"```text\nEnter general skills to assign (comma/space-separated indices, up to {points_remaining}):\n" + '\n'.join(f"[{i+1}] {s}" for i, s in enumerate(available_skills)) + "\n```")
+    while points_remaining > 0:
+        msg = await wait_for_user_message(user)
+        cmd = msg.content.strip()
+        indices = re.findall(r"\d+", cmd)
+        if indices:
+            indices = [int(i)-1 for i in indices]
+            if any(i < 0 or i >= len(available_skills) for i in indices):
+                await send_dm(user, f"```text\n[ERROR] Invalid skill index.\n```")
+                continue
+            if len(indices) > points_remaining:
+                await send_dm(user, f"```text\n[ERROR] You selected more skills than you have points ({points_remaining}).\n```")
+                continue
+            # If only one index, assign one point and re-prompt with feedback
+            if len(indices) == 1:
+                skill = available_skills[indices[0]]
+                skill_attr = skill.lower().replace(" ", "_")
+                if getattr(char.skills, skill_attr) > 0:
+                    await send_dm(user, f"```text\n[ERROR] You have already assigned a point to {skill}.\n```")
+                    continue
+                setattr(char.skills, skill_attr, 1)
+                points_remaining -= 1
+                if points_remaining > 0:
+                    await send_dm(user, f"```text\n[OK] Selected {skill}. You can make {points_remaining} more selection{'s' if points_remaining != 1 else ''}.\n```")
+                continue
+            # Otherwise, assign one point to each selected skill (batch)
+            for i in indices[:points_remaining]:
+                skill = available_skills[i]
+                skill_attr = skill.lower().replace(" ", "_")
+                if getattr(char.skills, skill_attr) > 0:
+                    await send_dm(user, f"```text\n[ERROR] You have already assigned a point to {skill}.\n```")
+                    continue
+                setattr(char.skills, skill_attr, 1)
+            points_remaining -= min(len(indices), points_remaining)
+            if points_remaining > 0:
+                continue
+            break
+        elif cmd.upper() == "X":
+            break
+        else:
+            await send_dm(user, "```text\n[ERROR] Enter skill indices separated by commas or spaces, or X to finish.\n```")
+            continue
+    # Final confirmation
+    display = ["```text", ">> Final Skill Allocation <<\n"]
+    display.append("==========================")
+    display.append("Key Skills:")
+    for skill in key_skills:
+        skill_attr = skill.lower().replace(" ", "_")
+        value = getattr(char.skills, skill_attr)
+        display.append(f"{skill:<15} {value} {format_skill_bar(value)}")
+    general_skills = [s for s in all_skills if s not in key_skills and getattr(char.skills, s.lower().replace(" ", "_")) > 0]
+    if general_skills:
+        for skill in general_skills:
             skill_attr = skill.lower().replace(" ", "_")
             value = getattr(char.skills, skill_attr)
             display.append(f"{skill:<15} {value} {format_skill_bar(value)}")
-        
-        general_skills = [s for s in all_skills if s not in key_skills and getattr(char.skills, s.lower().replace(" ", "_")) > 0]
-        if general_skills:
-            for skill in general_skills:
-                skill_attr = skill.lower().replace(" ", "_")
-                value = getattr(char.skills, skill_attr)
-                display.append(f"{skill:<15} {value} {format_skill_bar(value)}")
-        
-        display.append("\nConfirm allocation? (Y/N)")
-        display.append("```")
-        
-        await send_dm(user, "\n".join(display))
-        
-        confirm = await bot.wait_for("message", check=check_message(user))
-        if confirm.content.strip().upper() == "Y":
-            await send_dm(user, "```text\n[OK] Skills saved. Proceeding to Talent...\n```")
-            await select_talent(user_id)
-            return
-        elif confirm.content.strip().upper() == "N":
-            continue
-        else:
-            await send_dm(user, "```text\n[ERROR] Please enter Y or N\n```")
-            continue
+    display.append("\nConfirm allocation? (Y/N)")
+    display.append("```")
+    await send_dm(user, "\n".join(display))
+    confirm = await wait_for_user_message(user)
+    if confirm.content.strip().upper() == "Y":
+        await send_dm(user, "```text\n[OK] Skills saved. Proceeding to Talent...\n```")
+        await select_talent(user_id)
+        return
+    else:
+        await send_dm(user, "```text\n[RESET] Let's reassign skills.\n```")
+        # Reset all skills
+        for skill in key_skills + available_skills:
+            skill_attr = skill.lower().replace(" ", "_")
+            setattr(char.skills, skill_attr, 0)
+        await assign_skills(user_id)
+        return
 
 async def select_talent(user_id):
     user = await bot.fetch_user(int(user_id))
@@ -803,7 +751,7 @@ async def select_talent(user_id):
     
     while True:
         await send_dm(user, '\n'.join(menu))
-        msg = await bot.wait_for("message", check=check_message(user))
+        msg = await wait_for_user_message(user)
         
         if not msg.content.isdigit():
             await send_dm(user, "```text\n[ERROR] Please enter a number\n```")
@@ -827,7 +775,7 @@ async def select_talent(user_id):
 
 Confirm? (Y/N)```""")
         
-        confirm = await bot.wait_for("message", check=check_message(user))
+        confirm = await wait_for_user_message(user)
         if confirm.content.strip().upper() == "Y":
             char.talent = selected
             await send_dm(user, "```text\n[OK] Talent saved. Proceeding to Personal Agenda...\n```")
@@ -856,7 +804,7 @@ async def select_agenda(user_id):
     
     while True:
         await send_dm(user, '\n'.join(menu))
-        msg = await bot.wait_for("message", check=check_message(user))
+        msg = await wait_for_user_message(user)
         
         if not msg.content.isdigit():
             await send_dm(user, "[ERROR] Please enter a number")
@@ -872,7 +820,7 @@ async def select_agenda(user_id):
 >> Selected Agenda: {selected} <<
 Confirm? (Y/N)```""")
         
-        confirm = await bot.wait_for("message", check=check_message(user))
+        confirm = await wait_for_user_message(user)
         if confirm.content.strip().upper() == "Y":
             char.agenda = selected
             await send_dm(user, "[OK] Agenda saved. Proceeding to Gear...")
@@ -914,7 +862,7 @@ async def select_gear(user_id):
     
     while True:
         await send_dm(user, '\n'.join(menu))
-        msg = await bot.wait_for("message", check=check_message(user))
+        msg = await wait_for_user_message(user)
         
         if not msg.content.isdigit():
             await send_dm(user, "[ERROR] Please enter a number")
@@ -957,7 +905,7 @@ async def select_gear(user_id):
         
         while True:
             await send_dm(user, '\n'.join(menu))
-            msg = await bot.wait_for("message", check=check_message(user))
+            msg = await wait_for_user_message(user)
             if not msg.content.isdigit():
                 await send_dm(user, "[ERROR] Please enter a number")
                 continue
@@ -981,7 +929,7 @@ async def select_gear(user_id):
 
 Confirm these selections? (Y/N)```""")
             
-            confirm = await bot.wait_for("message", check=check_message(user))
+            confirm = await wait_for_user_message(user)
             if confirm.content.strip().upper() == "Y":
                 await send_dm(user, "[OK] Gear saved. Proceeding to Signature Item...")
                 await select_signature_item(user_id)
@@ -1011,7 +959,7 @@ async def select_signature_item(user_id):
     
     while True:
         await send_dm(user, '\n'.join(menu))
-        msg = await bot.wait_for("message", check=check_message(user))
+        msg = await wait_for_user_message(user)
         
         if not msg.content.isdigit():
             await send_dm(user, "[ERROR] Please enter a number")
@@ -1027,7 +975,7 @@ async def select_signature_item(user_id):
 >> Selected Item: {selected} <<
 Confirm? (Y/N)```""")
         
-        confirm = await bot.wait_for("message", check=check_message(user))
+        confirm = await wait_for_user_message(user)
         if confirm.content.strip().upper() == "Y":
             char.signature_item = selected
             char.inventory.add_item(Item(name=selected, stackable=False))
@@ -1058,7 +1006,7 @@ async def select_cash(user_id):
     await send_dm(user, '\n'.join(menu))
     
     while True:
-        msg = await bot.wait_for("message", check=check_message(user))
+        msg = await wait_for_user_message(user)
         if not msg.content in ["1", "2"]:
             await send_dm(user, "```text\n[ERROR] Please enter 1 or 2\n```")
             continue
@@ -1072,7 +1020,7 @@ Starting Cash: ${amt}
 Confirm? (Y/N)
 ```""")
 
-            confirm = await bot.wait_for("message", check=check_message(user))
+            confirm = await wait_for_user_message(user)
             if confirm.content.strip().upper() == "Y":
                 char.cash = amt
                 await send_dm(user, "[OK] Cash saved. Proceeding to final review...")
@@ -1121,7 +1069,7 @@ async def finalize_character(user_id):
     
     while True:
         await send_dm(user, '\n'.join(summary))
-        msg = await bot.wait_for("message", check=check_message(user))
+        msg = await wait_for_user_message(user)
         
         if msg.content == "1":
             data_manager.characters[user_id] = char
