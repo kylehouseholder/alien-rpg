@@ -27,9 +27,9 @@
     "Talent": "Past the Limit",
     "Agenda": "You are a decorated hero, you need to defend your reputation. At all costs.",
     "Gear": [
-      "M41A Pulse Rifle (x1) (x1) (x1) (x1) (x1) (x1) (x1) (x1)",
-      "2 G2 Electroshock Grenades (x1) (x1) (x1) (x1) (x1) (x1) (x1) (x1)",
-      "Bullet that you survived (x1) (x1) (x1) (x1) (x1) (x1) (x1)"
+      "M41A Pulse Rifle (x1) (x1) (x1) (x1) (x1) (x1) (x1) (x1) (x1)",
+      "2 G2 Electroshock Grenades (x1) (x1) (x1) (x1) (x1) (x1) (x1) (x1) (x1)",
+      "Bullet that you survived (x1) (x1) (x1) (x1) (x1) (x1) (x1) (x1)"
     ],
     "Signature Item": "Bullet that you survived",
     "Cash": 200
@@ -62,9 +62,9 @@
     "Talent": "Dodge",
     "Agenda": "You want to find an adult you can trust -- really trust.",
     "Gear": [
-      "Laser pointer (x1) (x1) (x1) (x1) (x1)",
-      "Electronic handheld game (x1) (x1) (x1) (x1) (x1)",
-      "Lunchbox covered in stickers (x1) (x1) (x1) (x1)"
+      "Laser pointer (x1) (x1) (x1) (x1) (x1) (x1)",
+      "Electronic handheld game (x1) (x1) (x1) (x1) (x1) (x1)",
+      "Lunchbox covered in stickers (x1) (x1) (x1) (x1) (x1)"
     ],
     "Signature Item": "Lunchbox covered in stickers",
     "Cash": 4
@@ -97,9 +97,9 @@
     "Talent": "Subdue",
     "Agenda": "You dream of turning in the badge and settling down in peace. Work towards it.",
     "Gear": [
-      "Binoculars (x1) (x1) (x1) (x1)",
-      "Hand radio (x1) (x1) (x1) (x1)",
-      "Photo of a loved one (x1) (x1) (x1)"
+      "Binoculars (x1) (x1) (x1) (x1) (x1)",
+      "Hand radio (x1) (x1) (x1) (x1) (x1)",
+      "Photo of a loved one (x1) (x1) (x1) (x1)"
     ],
     "Signature Item": "Photo of a loved one",
     "Cash": 600
@@ -132,11 +132,45 @@
     "Talent": "Full Throttle",
     "Agenda": "You're a loner, always happier when you can do a task without relying on others.",
     "Gear": [
-      "M4A3 Service Pistol (x1) (x1) (x1)",
-      "Maintenance Jack (x1) (x1) (x1)",
-      "Pilot shades (x1) (x1)"
+      "M4A3 Service Pistol (x1) (x1) (x1) (x1)",
+      "Maintenance Jack (x1) (x1) (x1) (x1)",
+      "Pilot shades (x1) (x1) (x1)"
     ],
     "Signature Item": "Pilot shades",
     "Cash": 200
+  },
+  "312447437359022082": {
+    "Name": "Grawg Dawgin",
+    "Career": "Kid",
+    "Gender": "Male",
+    "Age": 77,
+    "Attributes": {
+      "Strength": 4,
+      "Agility": 4,
+      "Wits": 4,
+      "Empathy": 2
+    },
+    "Skills": {
+      "Heavy_Machinery": 0,
+      "Stamina": 0,
+      "Close_Combat": 1,
+      "Mobility": 3,
+      "Piloting": 0,
+      "Ranged_Combat": 1,
+      "Observation": 2,
+      "Comtech": 0,
+      "Survival": 2,
+      "Manipulation": 0,
+      "Command": 1,
+      "Medical_Aid": 0
+    },
+    "Talent": "Beneath Notice",
+    "Agenda": "You have no family left. Make sure you never end up alone again.",
+    "Gear": [
+      "Fishing line (x1)",
+      "Yo-yo (x1)"
+    ],
+    "Signature Item": "Lunchbox covered in stickers",
+    "Cash": 6
   }
 }
