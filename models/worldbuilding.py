@@ -4,6 +4,35 @@ from dataclasses import dataclass
 from typing import List, Optional, Tuple, Dict
 import os
 import json
+import math
+
+# Constants for gravity calculations
+G = 6.67430e-11  # Gravitational constant in m³/kg/s²
+EARTH_MASS = 5.972e24  # Earth's mass in kg
+EARTH_RADIUS = 6371000  # Earth's radius in meters
+EARTH_GRAVITY = 9.81  # Earth's surface gravity in m/s²
+DEFAULT_DENSITY = 4500  # Default density in kg/m³ (4.5 g/cm³) - average of terrestrial planets
+
+def calculate_surface_gravity(diameter_km: float, density_kg_m3: float = DEFAULT_DENSITY) -> float:
+    """
+    Calculate surface gravity for a body using the formula g = (4/3) * π * G * ρ * r
+    Returns gravity in Earth g units (1.0 = Earth gravity)
+    """
+    # Convert diameter to radius in meters
+    radius_m = (diameter_km * 1000) / 2
+    
+    # Calculate mass using volume and density
+    volume = (4/3) * math.pi * radius_m**3
+    mass = volume * density_kg_m3
+    
+    # Calculate surface gravity in m/s²
+    gravity_ms2 = (G * mass) / (radius_m**2)
+    
+    # Convert to Earth g units
+    gravity_g = gravity_ms2 / EARTH_GRAVITY
+    
+    # Ensure we never return exactly zero and round to nearest 0.01g
+    return round(max(gravity_g, 1e-5), 2)  # Minimum gravity of 0.01g, rounded to 2 decimal places
 
 # ===========================================================================
 # STARS: Definitions & Generation Utilities
@@ -199,11 +228,34 @@ PLANET_SIZE_CATEGORIES: List[PlanetSizeCategory] = [
 
 def get_planet_size_category(roll: int) -> PlanetSizeCategory:
     """
-    Return the size category matching a 2d6 roll.
+    Return the size category matching a 2d6 roll, with some randomization within the category.
     """
     for cat in PLANET_SIZE_CATEGORIES:
         if cat.roll_min <= roll <= cat.roll_max:
-            return cat
+            # Add some randomization to the diameter (±20%)
+            base_diameter = cat.diameter_km
+            min_diameter = int(base_diameter * 0.8)
+            max_diameter = int(base_diameter * 1.2)
+            diameter = random.randint(min_diameter, max_diameter)
+            
+            # Calculate gravity using scientific formula
+            # Use higher density for larger planets (more iron content)
+            if diameter > 12000:
+                density = 5500  # 5.5 g/cm³ for larger planets (similar to Earth)
+            elif diameter > 8000:
+                density = 5000  # 5.0 g/cm³ for medium planets
+            else:
+                density = 4500  # 4.5 g/cm³ for smaller planets
+            
+            gravity = calculate_surface_gravity(diameter, density_kg_m3=density)
+            
+            return PlanetSizeCategory(
+                roll_min=cat.roll_min,
+                roll_max=cat.roll_max,
+                diameter_km=diameter,
+                gravity_g=gravity,
+                examples=cat.examples
+            )
     return PLANET_SIZE_CATEGORIES[0]  # fallback to smallest
 
 # ===========================================================================
@@ -632,3 +684,148 @@ def get_colony_allegiance(roll: int) -> ColonyAllegiance:
     return COLONY_ALLEGIANCE_TABLE.get(roll, ColonyAllegiance.NONE)
 
 # EOF: Worldbuilding module with updated colony generation
+
+class ExplorationStatus(Enum):
+    """Possible exploration states for orbital bodies."""
+    UNDISCOVERED = "Undiscovered"  # Not even detected by ICC
+    DETECTED = "Detected"          # Known to exist but unexplored
+    SURVEYED = "Surveyed"          # Basic survey completed
+    EXPLORED = "Explored"          # Detailed exploration completed
+    COLONIZED = "Colonized"        # Has a colony
+
+@dataclass
+class OrbitalBody:
+    """Represents any orbital body with exploration status."""
+    name: str
+    type: PlanetType
+    exploration_status: ExplorationStatus
+    distance_au: float
+    parent_star: str  # Name of the parent star
+
+def generate_orbital_body_name(star_name: str, body_type: PlanetType, distance_au: float, 
+                             exploration_status: ExplorationStatus) -> str:
+    """
+    Generate a name for an orbital body based on its star and exploration status.
+    """
+    if exploration_status == ExplorationStatus.UNDISCOVERED:
+        return "Undiscovered Body"
+    
+    # Extract the prefix from the star name (e.g., "HR" from "HR ω-9")
+    star_prefix = star_name.split()[0]
+    
+    # For detected but unexplored bodies
+    if exploration_status == ExplorationStatus.DETECTED:
+        return f"{star_prefix}-{distance_au:.1f}AU"
+    
+    # For surveyed/explored/colonized bodies
+    if exploration_status == ExplorationStatus.COLONIZED and random.random() < 0.5:
+        return random.choice(INHABITED_PLANET_NAMES)
+    
+    # Generate a type-specific code
+    prefix = random.choice(PLANET_PREFIX_MAP[body_type])
+    return f"{star_prefix}-{prefix}-{random.randint(1,999):03d}"
+
+def determine_exploration_status(roll: int, has_colony: bool = False) -> ExplorationStatus:
+    """
+    Determine exploration status based on a 2d6 roll.
+    """
+    if has_colony:
+        return ExplorationStatus.COLONIZED
+    
+    if roll <= 3:
+        return ExplorationStatus.UNDISCOVERED
+    elif roll <= 6:
+        return ExplorationStatus.DETECTED
+    elif roll <= 9:
+        return ExplorationStatus.SURVEYED
+    else:
+        return ExplorationStatus.EXPLORED
+
+def get_moon_size_category(parent_diameter_km: int) -> PlanetSizeCategory:
+    """
+    Generate a size category for a moon that is appropriately smaller than its parent body.
+    The moon's diameter will be between 2-12% of the parent's diameter.
+    There's also a chance (25%) of a "super moon" that's 12-25% of the parent's diameter.
+    """
+    # Roll for super moon chance (25% chance, increased from 20%)
+    is_super_moon = random.random() < 0.25
+    
+    if is_super_moon:
+        # Super moon: 12-25% of parent diameter (increased from 10-20%)
+        min_diameter = int(parent_diameter_km * 0.12)
+        max_diameter = int(parent_diameter_km * 0.25)
+    else:
+        # Normal moon: 2-12% of parent diameter (increased from 2-10%)
+        min_diameter = int(parent_diameter_km * 0.02)
+        max_diameter = int(parent_diameter_km * 0.12)
+    
+    # Generate a random diameter within the range
+    moon_diameter = random.randint(min_diameter, max_diameter)
+    
+    # Determine if the moon is likely to be rocky or icy
+    # Moons closer to their parent (smaller diameter) are more likely to be rocky
+    is_rocky = random.random() < (1 - (moon_diameter / max_diameter))
+    
+    # Use different densities for rocky vs icy moons
+    if is_rocky:
+        # Rocky moon density (similar to terrestrial planets)
+        # Use higher density for larger rocky moons
+        if moon_diameter > 15000:
+            density = 5500  # 5.5 g/cm³ for larger rocky moons (similar to Earth)
+        elif moon_diameter > 10000:
+            density = 5000  # 5.0 g/cm³ for medium rocky moons
+        else:
+            density = 4500  # 4.5 g/cm³ for smaller rocky moons
+    else:
+        # Icy moon density (similar to outer solar system moons)
+        if moon_diameter > 15000:
+            density = 2500  # 2.5 g/cm³ for larger icy moons
+        else:
+            density = 2000  # 2.0 g/cm³ for smaller icy moons
+    
+    # Calculate gravity using scientific formula with appropriate density
+    gravity = calculate_surface_gravity(moon_diameter, density_kg_m3=density)
+    
+    return PlanetSizeCategory(
+        roll_min=2,
+        roll_max=12,
+        diameter_km=moon_diameter,
+        gravity_g=gravity,
+        examples=["Gas Giant Moon"]
+    )
+
+def get_dwarf_planet_size() -> PlanetSizeCategory:
+    """
+    Generate a size category for a dwarf planet in an asteroid belt.
+    Dwarf planets are small, between 500-2000km diameter.
+    """
+    diameter = random.randint(500, 2000)
+    # Calculate gravity using scientific formula
+    gravity = calculate_surface_gravity(diameter)
+    
+    return PlanetSizeCategory(
+        roll_min=2,
+        roll_max=12,
+        diameter_km=diameter,
+        gravity_g=gravity,  # Already rounded in calculate_surface_gravity
+        examples=["Dwarf Planet"]
+    )
+
+def get_gas_giant_size() -> PlanetSizeCategory:
+    """
+    Generate a size category for a gas giant.
+    Gas giants are large, between 50,000-400,000km diameter.
+    Uses a lower density for gas giants (1.3 g/cm³)
+    """
+    # Increased max size to 400,000km to allow for larger moons
+    diameter = random.randint(50000, 400000)
+    # Calculate gravity using scientific formula with gas giant density
+    gravity = calculate_surface_gravity(diameter, density_kg_m3=1300)  # 1.3 g/cm³
+    
+    return PlanetSizeCategory(
+        roll_min=2,
+        roll_max=12,
+        diameter_km=diameter,
+        gravity_g=gravity,
+        examples=["Gas Giant"]
+    )
