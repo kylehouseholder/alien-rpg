@@ -1,0 +1,56 @@
+{
+  "GIANT": {
+    "habitable_zone": [5.0, 10.0],
+    "typical_lifetime_gyr": 0.1,
+    "gas_giant_modifier": 0,
+    "terrestrial_modifier": 0,
+    "ice_modifier": -1,
+    "belt_modifier": 0,
+    "spectral_influence": "Intense radiation; habitable planets are rare and far out."
+  },
+  "SUBGIANT": {
+    "habitable_zone": [1.0, 2.0],
+    "typical_lifetime_gyr": 1.0,
+    "gas_giant_modifier": -1,
+    "terrestrial_modifier": 0,
+    "ice_modifier": -1,
+    "belt_modifier": -2,
+    "spectral_influence": "Luminosity increasing; habitable zone shifts outward over time."
+  },
+  "MAIN_SEQUENCE": {
+    "habitable_zone": [0.5, 2.0],
+    "typical_lifetime_gyr": 10.0,
+    "gas_giant_modifier": 0,
+    "terrestrial_modifier": 0,
+    "ice_modifier": 0,
+    "belt_modifier": 0,
+    "spectral_influence": "Stable output; ideal for long-term colonies."
+  },
+  "WHITE_DWARF": {
+    "habitable_zone": [0.01, 0.05],
+    "typical_lifetime_gyr": 100.0,
+    "gas_giant_modifier": -4,
+    "terrestrial_modifier": -3,
+    "ice_modifier": 0,
+    "belt_modifier": -2,
+    "spectral_influence": "Low luminosity; narrow, close-in habitable zone; tidal locking likely."
+  },
+  "RED_DWARF": {
+    "habitable_zone": [0.1, 0.3],
+    "typical_lifetime_gyr": 1000.0,
+    "gas_giant_modifier": 0,
+    "terrestrial_modifier": -3,
+    "ice_modifier": 0,
+    "belt_modifier": 0,
+    "spectral_influence": "Frequent flares; high radiation risk in tight orbits."
+  },
+  "WHITE_MAIN_SEQUENCE": {
+    "habitable_zone": [1.5, 3.0],
+    "typical_lifetime_gyr": 2.0,
+    "gas_giant_modifier": 0,
+    "terrestrial_modifier": 0,
+    "ice_modifier": -1,
+    "belt_modifier": 0,
+    "spectral_influence": "Hotter, shorter-lived; wide UV-rich habitable belt."
+  }
+} 

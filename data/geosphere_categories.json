@@ -1,0 +1,8 @@
+[
+  {"roll_min": 2, "roll_max": 4, "type": "DESERT", "description": "No surface water"},
+  {"roll_min": 5, "roll_max": 6, "type": "ARID", "description": "Deserts & dry steppes"},
+  {"roll_min": 7, "roll_max": 8, "type": "TEMPERATE_DRY", "description": "30-40% ocean coverage"},
+  {"roll_min": 9, "roll_max": 10, "type": "TEMPERATE_WET", "description": "60-70% ocean coverage"},
+  {"roll_min": 11, "roll_max": 11, "type": "WET", "description": "Global oceans with islands"},
+  {"roll_min": 12, "roll_max": 12, "type": "WATER", "description": "No dry land"}
+] 

@@ -1,0 +1,5 @@
+[
+  {"roll_min": 2, "roll_max": 7, "size": "START_UP", "population_formula": "3d6 x 10", "base_missions": "1"},
+  {"roll_min": 8, "roll_max": 10, "size": "YOUNG", "population_formula": "3d6 x 100", "base_missions": "D3-1"},
+  {"roll_min": 11, "roll_max": 12, "size": "ESTABLISHED", "population_formula": "2d6 x 1000", "base_missions": "D3"}
+] 

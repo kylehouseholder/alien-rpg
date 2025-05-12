@@ -1,0 +1,10 @@
+[
+  {"roll_min": 2, "roll_max": 4, "type": "NONE", "young_modifier": 0, "established_modifier": 0},
+  {"roll_min": 5, "roll_max": 5, "type": "RING", "young_modifier": 0, "established_modifier": 0},
+  {"roll_min": 6, "roll_max": 6, "type": "SATELLITE_STATION", "young_modifier": 0, "established_modifier": 0},
+  {"roll_min": 7, "roll_max": 8, "type": "MOONS", "young_modifier": 0, "established_modifier": 0},
+  {"roll_min": 9, "roll_max": 9, "type": "SURVEY_SATS", "young_modifier": 0, "established_modifier": 0},
+  {"roll_min": 10, "roll_max": 10, "type": "TRANSFER_STATION", "young_modifier": 0, "established_modifier": 0},
+  {"roll_min": 11, "roll_max": 11, "type": "TRANSFER_STATION", "young_modifier": 0, "established_modifier": 0},
+  {"roll_min": 12, "roll_max": 12, "type": "MULTIPLE_MOONS", "young_modifier": 0, "established_modifier": 0}
+] 
