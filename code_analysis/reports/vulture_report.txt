@@ -1,0 +1,12 @@
+📊 Vulture Analysis Report - Generated: 2025-05-13 18:00:34
+=============================================
+scripts/test_worldbuilding.py:2: unused import 'generate_asteroid_belt_name' (90% confidence)
+scripts/test_worldbuilding.py:2: unused import 'generate_dwarf_planet_name' (90% confidence)
+scripts/test_worldbuilding.py:2: unused import 'generate_gas_giant_name' (90% confidence)
+scripts/test_worldbuilding.py:2: unused import 'generate_moon_name' (90% confidence)
+scripts/test_worldbuilding.py:2: unused import 'generate_terrestrial_name' (90% confidence)
+scripts/test_worldbuilding.py:2: unused import 'get_colony_size_rank' (90% confidence)
+
+📊 Summary:
+Total unused items found: 6
+Files with unused code: 6

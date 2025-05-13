@@ -1,0 +1,11 @@
+repos:
+-   repo: local
+    hooks:
+    -   id: dead-code-check
+        name: Dead Code Check
+        entry: ./code_analysis/analyze-unused.sh
+        language: system
+        pass_filenames: false
+        types: [python]
+        stages: [commit]
+        verbose: true 

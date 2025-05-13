@@ -1,0 +1,15 @@
+📊 Code Usage Report - Generated: 2025-05-13 18:00:34
+==========================================
+
+🎮 Game Mechanics Library:
+  models/weapons.py - Part of game mechanics library
+  models/equipment.py - Part of game mechanics library
+  models/worldbuilding.py - Part of game mechanics library
+  models/armor.py - Part of game mechanics library
+  models/consumables.py - Part of game mechanics library
+  models/medicals.py - Part of game mechanics library
+  models/pharmaceuticals.py - Part of game mechanics library
+
+🔮 Planned Future Usage:
+  models/character.py - Marked for future implementation
+  models/items.py - Marked for future implementation

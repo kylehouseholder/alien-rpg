@@ -1,0 +1,27 @@
+=== Dead Code Analysis Run: 2025-05-13 17:54:00 ===
+----------------------------------------
+Vulture Findings:
+  - Total unused items: 6
+  - Files with unused code: 6
+Ruff Findings:
+  - Total unused imports/vars: 41
+
+
+=== Dead Code Analysis Run: 2025-05-13 17:54:36 ===
+----------------------------------------
+Vulture Findings:
+  - Total unused items: 6
+  - Files with unused code: 6
+Ruff Findings:
+  - Total unused imports/vars: 41
+
+
+=== Dead Code Analysis Run: 2025-05-13 18:00:34 ===
+----------------------------------------
+Vulture Findings:
+  - Total unused items: 6
+  - Files with unused code: 6
+Ruff Findings:
+  - Total unused imports/vars: 41
+
+

@@ -1,0 +1,215 @@
+📊 Ruff Analysis Report - Generated: 2025-05-13 18:00:34
+===========================================
+main.py:6:8: F401 [*] `random` imported but unused
+  |
+4 | import json
+5 | import os
+6 | import random
+  |        ^^^^^^ F401
+7 | import asyncio
+8 | from dotenv import load_dotenv
+  |
+  = help: Remove unused import: `random`
+
+main.py:9:26: F401 [*] `typing.List` imported but unused
+   |
+ 7 | import asyncio
+ 8 | from dotenv import load_dotenv
+ 9 | from typing import Dict, List, Optional, Union, Tuple
+   |                          ^^^^ F401
+10 | from models.character import Character, Attributes, Skills
+11 | from models.items import Item, ConsumableItem, Inventory
+   |
+   = help: Remove unused import
+
+main.py:9:42: F401 [*] `typing.Union` imported but unused
+   |
+ 7 | import asyncio
+ 8 | from dotenv import load_dotenv
+ 9 | from typing import Dict, List, Optional, Union, Tuple
+   |                                          ^^^^^ F401
+10 | from models.character import Character, Attributes, Skills
+11 | from models.items import Item, ConsumableItem, Inventory
+   |
+   = help: Remove unused import
+
+main.py:691:9: F841 Local variable `manual_nav` is assigned to but never used
+    |
+689 |         cmd = msg.content.strip().upper()
+690 |         vals = None
+691 |         manual_nav = False
+    |         ^^^^^^^^^^ F841
+692 |         multi_match = re.match(r"^(\d+)[,\s]+(\d+)[,\s]+(\d+)$", cmd)
+693 |         if multi_match:
+    |
+    = help: Remove assignment to unused variable `manual_nav`
+
+models/character.py:1:26: F401 [*] `typing.List` imported but unused
+  |
+1 | from typing import Dict, List, Optional
+  |                          ^^^^ F401
+2 | from dataclasses import dataclass, field
+3 | from .items import Inventory, Item, ConsumableItem
+  |
+  = help: Remove unused import
+
+models/character.py:1:32: F401 [*] `typing.Optional` imported but unused
+  |
+1 | from typing import Dict, List, Optional
+  |                                ^^^^^^^^ F401
+2 | from dataclasses import dataclass, field
+3 | from .items import Inventory, Item, ConsumableItem
+  |
+  = help: Remove unused import
+
+models/dice.py:1:33: F401 [*] `typing.Union` imported but unused
+  |
+1 | from typing import List, Tuple, Union
+  |                                 ^^^^^ F401
+2 | import re
+3 | import random
+  |
+  = help: Remove unused import: `typing.Union`
+
+models/items.py:1:20: F401 [*] `typing.Dict` imported but unused
+  |
+1 | from typing import Dict, List, Optional, Union
+  |                    ^^^^ F401
+2 | from dataclasses import dataclass, field
+3 | from .dice import DiceRoll
+  |
+  = help: Remove unused import
+
+models/items.py:1:42: F401 [*] `typing.Union` imported but unused
+  |
+1 | from typing import Dict, List, Optional, Union
+  |                                          ^^^^^ F401
+2 | from dataclasses import dataclass, field
+3 | from .dice import DiceRoll
+  |
+  = help: Remove unused import
+
+models/weapon_item.py:1:36: F401 [*] `dataclasses.field` imported but unused
+  |
+1 | from dataclasses import dataclass, field
+  |                                    ^^^^^ F401
+2 | from typing import Optional, List
+3 | from .items import Item
+  |
+  = help: Remove unused import: `dataclasses.field`
+
+scripts/test_worldbuilding.py:4:17: F401 [*] `models.worldbuilding.generate_orbital_body_name` imported but unused
+  |
+2 | from models.worldbuilding import (
+3 |     generate_star_name, StarType, BrightnessClass, SpectralClass, Star,
+4 |     PlanetType, generate_orbital_body_name, get_planet_size_category,
+  |                 ^^^^^^^^^^^^^^^^^^^^^^^^^^ F401
+5 |     get_atmosphere_type, get_temperature_type, get_geosphere_type,
+6 |     get_planetary_terrain, get_ice_planet_terrain,
+  |
+  = help: Remove unused import
+
+scripts/test_worldbuilding.py:9:5: F401 [*] `models.worldbuilding.AtmosphereType` imported but unused
+   |
+ 7 |     get_colony_size, get_colony_mission, get_orbit_components,
+ 8 |     get_num_factions, get_colony_factions, get_colony_allegiance,
+ 9 |     AtmosphereType, ExplorationStatus, determine_exploration_status,
+   |     ^^^^^^^^^^^^^^ F401
+10 |     get_moon_size_category, get_dwarf_planet_size, get_gas_giant_size,
+11 |     generate_asteroid_belt_name, generate_dwarf_planet_name, generate_gas_giant_name,
+   |
+   = help: Remove unused import
+
+scripts/test_worldbuilding.py:10:29: F401 [*] `models.worldbuilding.get_dwarf_planet_size` imported but unused
+   |
+ 8 |     get_num_factions, get_colony_factions, get_colony_allegiance,
+ 9 |     AtmosphereType, ExplorationStatus, determine_exploration_status,
+10 |     get_moon_size_category, get_dwarf_planet_size, get_gas_giant_size,
+   |                             ^^^^^^^^^^^^^^^^^^^^^ F401
+11 |     generate_asteroid_belt_name, generate_dwarf_planet_name, generate_gas_giant_name,
+12 |     generate_moon_name, generate_terrestrial_name, generate_colony_name,
+   |
+   = help: Remove unused import
+
+scripts/test_worldbuilding.py:11:5: F401 [*] `models.worldbuilding.generate_asteroid_belt_name` imported but unused
+   |
+ 9 |     AtmosphereType, ExplorationStatus, determine_exploration_status,
+10 |     get_moon_size_category, get_dwarf_planet_size, get_gas_giant_size,
+11 |     generate_asteroid_belt_name, generate_dwarf_planet_name, generate_gas_giant_name,
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^ F401
+12 |     generate_moon_name, generate_terrestrial_name, generate_colony_name,
+13 |     get_mythological_name, determine_colonization_status, ColonySize,
+   |
+   = help: Remove unused import
+
+scripts/test_worldbuilding.py:11:34: F401 [*] `models.worldbuilding.generate_dwarf_planet_name` imported but unused
+   |
+ 9 |     AtmosphereType, ExplorationStatus, determine_exploration_status,
+10 |     get_moon_size_category, get_dwarf_planet_size, get_gas_giant_size,
+11 |     generate_asteroid_belt_name, generate_dwarf_planet_name, generate_gas_giant_name,
+   |                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^ F401
+12 |     generate_moon_name, generate_terrestrial_name, generate_colony_name,
+13 |     get_mythological_name, determine_colonization_status, ColonySize,
+   |
+   = help: Remove unused import
+
+scripts/test_worldbuilding.py:11:62: F401 [*] `models.worldbuilding.generate_gas_giant_name` imported but unused
+   |
+ 9 |     AtmosphereType, ExplorationStatus, determine_exploration_status,
+10 |     get_moon_size_category, get_dwarf_planet_size, get_gas_giant_size,
+11 |     generate_asteroid_belt_name, generate_dwarf_planet_name, generate_gas_giant_name,
+   |                                                              ^^^^^^^^^^^^^^^^^^^^^^^ F401
+12 |     generate_moon_name, generate_terrestrial_name, generate_colony_name,
+13 |     get_mythological_name, determine_colonization_status, ColonySize,
+   |
+   = help: Remove unused import
+
+scripts/test_worldbuilding.py:12:5: F401 [*] `models.worldbuilding.generate_moon_name` imported but unused
+   |
+10 |     get_moon_size_category, get_dwarf_planet_size, get_gas_giant_size,
+11 |     generate_asteroid_belt_name, generate_dwarf_planet_name, generate_gas_giant_name,
+12 |     generate_moon_name, generate_terrestrial_name, generate_colony_name,
+   |     ^^^^^^^^^^^^^^^^^^ F401
+13 |     get_mythological_name, determine_colonization_status, ColonySize,
+14 |     OrbitalBody, ColonizationStatus, calculate_surface_gravity, get_colony_size_rank,
+   |
+   = help: Remove unused import
+
+scripts/test_worldbuilding.py:12:25: F401 [*] `models.worldbuilding.generate_terrestrial_name` imported but unused
+   |
+10 |     get_moon_size_category, get_dwarf_planet_size, get_gas_giant_size,
+11 |     generate_asteroid_belt_name, generate_dwarf_planet_name, generate_gas_giant_name,
+12 |     generate_moon_name, generate_terrestrial_name, generate_colony_name,
+   |                         ^^^^^^^^^^^^^^^^^^^^^^^^^ F401
+13 |     get_mythological_name, determine_colonization_status, ColonySize,
+14 |     OrbitalBody, ColonizationStatus, calculate_surface_gravity, get_colony_size_rank,
+   |
+   = help: Remove unused import
+
+scripts/test_worldbuilding.py:13:59: F401 [*] `models.worldbuilding.ColonySize` imported but unused
+   |
+11 |     generate_asteroid_belt_name, generate_dwarf_planet_name, generate_gas_giant_name,
+12 |     generate_moon_name, generate_terrestrial_name, generate_colony_name,
+13 |     get_mythological_name, determine_colonization_status, ColonySize,
+   |                                                           ^^^^^^^^^^ F401
+14 |     OrbitalBody, ColonizationStatus, calculate_surface_gravity, get_colony_size_rank,
+15 |     OrbitalSystem
+   |
+   = help: Remove unused import
+
+scripts/test_worldbuilding.py:14:65: F401 [*] `models.worldbuilding.get_colony_size_rank` imported but unused
+   |
+12 |     generate_moon_name, generate_terrestrial_name, generate_colony_name,
+13 |     get_mythological_name, determine_colonization_status, ColonySize,
+14 |     OrbitalBody, ColonizationStatus, calculate_surface_gravity, get_colony_size_rank,
+   |                                                                 ^^^^^^^^^^^^^^^^^^^^ F401
+15 |     OrbitalSystem
+16 | )
+   |
+   = help: Remove unused import
+
+Found 20 errors.
+[*] 19 fixable with the `--fix` option (1 hidden fix can be enabled with the `--unsafe-fixes` option).
+
+📊 Summary:
+Total unused imports/vars found: 41
