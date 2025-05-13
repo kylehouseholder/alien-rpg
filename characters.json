@@ -1,176 +1,77 @@
 {
-  "203249116795371520": {
-    "Name": "Bob Waters",
-    "Career": "Colonial Marine",
-    "Gender": "Male",
-    "Age": 34,
-    "Attributes": {
-      "Strength": 5,
-      "Agility": 3,
-      "Wits": 2,
-      "Empathy": 4
-    },
-    "Skills": {
-      "Heavy_Machinery": 1,
-      "Stamina": 2,
-      "Close_Combat": 2,
-      "Mobility": 0,
-      "Piloting": 0,
-      "Ranged_Combat": 3,
-      "Observation": 0,
-      "Comtech": 1,
-      "Survival": 1,
-      "Manipulation": 0,
-      "Command": 0,
-      "Medical_Aid": 0
-    },
-    "Talent": "Past the Limit",
-    "Agenda": "You are a decorated hero, you need to defend your reputation. At all costs.",
-    "Gear": [
-      "M41A Pulse Rifle (x1) (x1) (x1) (x1) (x1) (x1) (x1) (x1) (x1)",
-      "2 G2 Electroshock Grenades (x1) (x1) (x1) (x1) (x1) (x1) (x1) (x1) (x1)",
-      "Bullet that you survived (x1) (x1) (x1) (x1) (x1) (x1) (x1) (x1)"
-    ],
-    "Signature Item": "Bullet that you survived",
-    "Cash": 200
+  "characters": {
+    "203249116795371520": {
+      "203249116795371520_1": {
+        "Name": "Character A",
+        "Career": "Colonial Marshal",
+        "Gender": "Male",
+        "Age": 22,
+        "Attributes": {
+          "Strength": 4,
+          "Agility": 4,
+          "Wits": 3,
+          "Empathy": 3
+        },
+        "Skills": {
+          "Heavy_Machinery": 1,
+          "Stamina": 1,
+          "Close_Combat": 1,
+          "Mobility": 1,
+          "Piloting": 1,
+          "Ranged_Combat": 1,
+          "Observation": 1,
+          "Comtech": 1,
+          "Survival": 1,
+          "Manipulation": 1,
+          "Command": 0,
+          "Medical_Aid": 0
+        },
+        "Talent": "Investigator",
+        "Agenda": "Your longtime partner betrayed you and defected to a crime syndicate. Get even.",
+        "Gear": [
+          ".357 Magnum Revolver (x1)",
+          "Neversleep pills (x5)"
+        ],
+        "Signature Item": "Photo of a loved one",
+        "Cash": 400
+      },
+      "203249116795371520_2": {
+        "Name": "Character B",
+        "Career": "Colonial Marine",
+        "Gender": "Female",
+        "Age": 44,
+        "Attributes": {
+          "Strength": 4,
+          "Agility": 4,
+          "Wits": 3,
+          "Empathy": 3
+        },
+        "Skills": {
+          "Heavy_Machinery": 1,
+          "Stamina": 2,
+          "Close_Combat": 2,
+          "Mobility": 1,
+          "Piloting": 1,
+          "Ranged_Combat": 2,
+          "Observation": 1,
+          "Comtech": 0,
+          "Survival": 0,
+          "Manipulation": 0,
+          "Command": 0,
+          "Medical_Aid": 0
+        },
+        "Talent": "Overkill",
+        "Agenda": "The death of your buddy has spooked you\u2014now you secretly fear combat and confrontation. You need to overcome your fear.",
+        "Gear": [
+          "M3 Personnel Armor (x1)",
+          "M41A Pulse Rifle (x1)"
+        ],
+        "Signature Item": "Bullet that you survived",
+        "Cash": 100
+      }
+    }
   },
-  "337923698610333382": {
-    "Name": "Griedi Gokobler",
-    "Career": "Kid",
-    "Gender": "Prefer not to specify",
-    "Age": 119,
-    "Attributes": {
-      "Strength": 2,
-      "Agility": 5,
-      "Wits": 4,
-      "Empathy": 3
-    },
-    "Skills": {
-      "Heavy_Machinery": 0,
-      "Stamina": 1,
-      "Close_Combat": 1,
-      "Mobility": 3,
-      "Piloting": 0,
-      "Ranged_Combat": 0,
-      "Observation": 1,
-      "Comtech": 1,
-      "Survival": 2,
-      "Manipulation": 0,
-      "Command": 1,
-      "Medical_Aid": 0
-    },
-    "Talent": "Dodge",
-    "Agenda": "You want to find an adult you can trust -- really trust.",
-    "Gear": [
-      "Laser pointer (x1) (x1) (x1) (x1) (x1) (x1)",
-      "Electronic handheld game (x1) (x1) (x1) (x1) (x1) (x1)",
-      "Lunchbox covered in stickers (x1) (x1) (x1) (x1) (x1)"
-    ],
-    "Signature Item": "Lunchbox covered in stickers",
-    "Cash": 4
-  },
-  "312447437352212012": {
-    "Name": "Bingus Bawlshampoo",
-    "Career": "Colonial Marshal",
-    "Gender": "Male",
-    "Age": 33,
-    "Attributes": {
-      "Strength": 4,
-      "Agility": 2,
-      "Wits": 5,
-      "Empathy": 3
-    },
-    "Skills": {
-      "Heavy_Machinery": 1,
-      "Stamina": 1,
-      "Close_Combat": 1,
-      "Mobility": 1,
-      "Piloting": 0,
-      "Ranged_Combat": 2,
-      "Observation": 3,
-      "Comtech": 0,
-      "Survival": 0,
-      "Manipulation": 1,
-      "Command": 0,
-      "Medical_Aid": 0
-    },
-    "Talent": "Subdue",
-    "Agenda": "You dream of turning in the badge and settling down in peace. Work towards it.",
-    "Gear": [
-      "Binoculars (x1) (x1) (x1) (x1) (x1)",
-      "Hand radio (x1) (x1) (x1) (x1) (x1)",
-      "Photo of a loved one (x1) (x1) (x1) (x1)"
-    ],
-    "Signature Item": "Photo of a loved one",
-    "Cash": 600
-  },
-  "312447437359111182": {
-    "Name": "Tawkin Smack",
-    "Career": "Pilot",
-    "Gender": "Non-binary",
-    "Age": 48,
-    "Attributes": {
-      "Strength": 4,
-      "Agility": 2,
-      "Wits": 4,
-      "Empathy": 4
-    },
-    "Skills": {
-      "Heavy_Machinery": 1,
-      "Stamina": 0,
-      "Close_Combat": 1,
-      "Mobility": 0,
-      "Piloting": 3,
-      "Ranged_Combat": 2,
-      "Observation": 1,
-      "Comtech": 1,
-      "Survival": 0,
-      "Manipulation": 0,
-      "Command": 0,
-      "Medical_Aid": 1
-    },
-    "Talent": "Full Throttle",
-    "Agenda": "You're a loner, always happier when you can do a task without relying on others.",
-    "Gear": [
-      "M4A3 Service Pistol (x1) (x1) (x1) (x1)",
-      "Maintenance Jack (x1) (x1) (x1) (x1)",
-      "Pilot shades (x1) (x1) (x1)"
-    ],
-    "Signature Item": "Pilot shades",
-    "Cash": 200
-  },
-  "312447437359022082": {
-    "Name": "Grawg Dawgin",
-    "Career": "Kid",
-    "Gender": "Male",
-    "Age": 77,
-    "Attributes": {
-      "Strength": 4,
-      "Agility": 4,
-      "Wits": 4,
-      "Empathy": 2
-    },
-    "Skills": {
-      "Heavy_Machinery": 0,
-      "Stamina": 0,
-      "Close_Combat": 1,
-      "Mobility": 3,
-      "Piloting": 0,
-      "Ranged_Combat": 1,
-      "Observation": 2,
-      "Comtech": 0,
-      "Survival": 2,
-      "Manipulation": 0,
-      "Command": 0,
-      "Medical_Aid": 1
-    },
-    "Talent": "Beneath Notice",
-    "Agenda": "You have no family left. Make sure you never end up alone again.",
-    "Gear": [
-      "Fishing line (x1)",
-      "Yo-yo (x1)"
-    ],
-    "Signature Item": "Lunchbox covered in stickers",
-    "Cash": 6
+  "primary_characters": {
+    "203249116795371520": "203249116795371520_1"
   }
 }
