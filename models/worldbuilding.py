@@ -1618,3 +1618,24 @@ class OrbitalSystem:
         if self.max_exploration_score == 0:
             return 0.0
         return (self.exploration_score / self.max_exploration_score) * 100
+
+def determine_exploration_status(roll: int) -> ExplorationStatus:
+    """
+    Determine exploration status based on a 2d6 roll.
+    """
+    if roll <= 3:
+        return ExplorationStatus.UNDISCOVERED
+    elif roll <= 6:
+        return ExplorationStatus.DETECTED
+    elif roll <= 9:
+        return ExplorationStatus.SURVEYED
+    else:
+        return ExplorationStatus.EXPLORED
+
+def determine_exploration_status_for_body(body_type: PlanetType, roll: int) -> ExplorationStatus:
+    """Determine exploration status, capping at 'surveyed' for gas giants and asteroid belts."""
+    status = determine_exploration_status(roll)
+    if body_type in [PlanetType.GAS_GIANT, PlanetType.ASTEROID_BELT]:
+        if status == ExplorationStatus.EXPLORED:
+            return ExplorationStatus.SURVEYED
+    return status
