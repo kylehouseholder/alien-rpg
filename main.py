@@ -6,7 +6,7 @@ import os
 import random
 import asyncio
 from dotenv import load_dotenv
-from typing import Dict, List, Optional, Union
+from typing import Dict, List, Optional, Union, Tuple
 from models.character import Character, Attributes, Skills
 from models.items import Item, ConsumableItem, Inventory
 from models.dice import DiceRoll
@@ -232,7 +232,36 @@ async def select_personal_details(user, char_id: str):
     user_id = str(user.id)
     logger.debug(f"Starting personal details for user {user_id}, char {char_id}")
     
-    await send_dm(user, r"""```text
+    # Verify we have a valid session
+    if user_id not in creation_sessions or char_id not in creation_sessions[user_id]:
+        logger.error(f"No valid session found for user {user_id}, char {char_id}")
+        await send_dm(user, "```text\n[ERROR] Character creation session lost. Please start over with /createcharacter.\n```")
+        return
+    
+    # Clear any existing session for this character
+    if user_id in creation_sessions and char_id in creation_sessions[user_id]:
+        del creation_sessions[user_id][char_id]
+    
+    # Initialize the character in the session
+    if user_id not in creation_sessions:
+        creation_sessions[user_id] = {}
+    creation_sessions[user_id][char_id] = Character(
+        id=char_id,
+        name="",  # Will be set during creation
+        career="",  # Will be set during creation
+        gender="",
+        age=0,
+        attributes=Attributes(),
+        skills=Skills(),
+        talent="",
+        agenda="",
+        inventory=Inventory(),
+        signature_item="",
+        cash=0
+    )
+    
+    try:
+        await send_dm(user, r"""```text
                     __                             ___       __  
    ____  ____  _____/ /__________  ____ ___  ____  / (_)___  / /__
   / __ \/ __ \/ ___/ __/ ___/ __ \/ __ `__ \/ __ \/ / / __ \/ //_/
@@ -244,10 +273,10 @@ async def select_personal_details(user, char_id: str):
 >>>......CONNECTING TO WEYLAND-YUTANI HUMAN RESOURCE NODE 381-A //
                   
 ```""")
-    
-    await asyncio.sleep(0.3)
+        
+        await asyncio.sleep(0.3)
 
-    await send_dm(user, r"""```text
+        await send_dm(user, r"""```text
  
 WELCOME USER. //
 
@@ -274,10 +303,10 @@ This is of no concern to Weyland-Yutani or any of its corporate subsidiaries, af
 >>>......AWAITING INITIAL INPUT //
                   
 ```""")
-    
-    await asyncio.sleep(0.3)
+        
+        await asyncio.sleep(0.3)
 
-    await send_dm(user, r"""```text
+        await send_dm(user, r"""```text
 
 >>>......CHARACTER CREATION PROTOCOL ONLINE //
 >>>......STEP 00: PERSONAL DETAILS //
@@ -290,26 +319,30 @@ All responses must be truthful and accurate. /
 Falsification of records is grounds for immediate termination. //
                   
 ```""")
-    
-    await asyncio.sleep(0.3)
-    await send_dm(user, """```text
+        
+        await asyncio.sleep(0.3)
+        
+        # Name input
+        await send_dm(user, """```text
 Enter your character's full name:
 (Only letters, spaces, and hyphens allowed.)
 ```""")
-    while True:
-        name_msg = await wait_for_user_message(user)
-        name = name_msg.content.strip()
-        # Accept only letters, spaces, and hyphens
-        if re.match(r'^[A-Za-z\- ]+$', name) and len(name) > 1:
-            break
-        else:
-            await send_dm(user, """```text
+        
+        while True:
+            name_msg = await wait_for_user_message(user)
+            name = name_msg.content.strip()
+            # Accept only letters, spaces, and hyphens
+            if re.match(r'^[A-Za-z\- ]+$', name) and len(name) > 1:
+                creation_sessions[user_id][char_id].name = name
+                break
+            else:
+                await send_dm(user, """```text
 [ERROR] Please enter a valid name using only letters, spaces, and hyphens.
 Try again:
 ```""")
 
-    # Get gender
-    await send_dm(user, """```text
+        # Gender input
+        await send_dm(user, """```text
 Select your character's gender identity:
 [1] Male
 [2] Female
@@ -318,67 +351,74 @@ Select your character's gender identity:
 [5] Other (please specify)
 
 Enter the number of your choice:```""")
-    
-    while True:
-        gender_msg = await wait_for_user_message(user)
-        choice = gender_msg.content.strip()
         
-        if choice == "1":
-            gender = "Male"
-            break
-        elif choice == "2":
-            gender = "Female"
-            break
-        elif choice == "3":
-            gender = "Non-binary"
-            break
-        elif choice == "4":
-            gender = "Prefer not to specify"
-            break
-        elif choice == "5":
-            await send_dm(user, "```text\nPlease specify your gender identity:```")
-            custom_msg = await wait_for_user_message(user)
-            gender = custom_msg.content.strip()
-            break
-        else:
-            await send_dm(user, "```text\n[ERROR] Please enter a number between 1 and 5```")
-            continue
-
-    await send_dm(user, "```text\nEnter your character's age (18-120):```")
-    while True:
-        age_msg = await wait_for_user_message(user)
-        try:
-            age = int(age_msg.content.strip())
-            if 18 <= age <= 120:
+        while True:
+            gender_msg = await wait_for_user_message(user)
+            choice = gender_msg.content.strip()
+            
+            if choice == "1":
+                creation_sessions[user_id][char_id].gender = "Male"
+                break
+            elif choice == "2":
+                creation_sessions[user_id][char_id].gender = "Female"
+                break
+            elif choice == "3":
+                creation_sessions[user_id][char_id].gender = "Non-binary"
+                break
+            elif choice == "4":
+                creation_sessions[user_id][char_id].gender = "Prefer not to specify"
+                break
+            elif choice == "5":
+                await send_dm(user, "```text\nPlease specify your gender identity:```")
+                custom_msg = await wait_for_user_message(user)
+                creation_sessions[user_id][char_id].gender = custom_msg.content.strip()
                 break
             else:
-                await send_dm(user, "```text\n[ERROR] Age must be between 18 and 120```")
-        except ValueError:
-            await send_dm(user, "```text\n[ERROR] Please enter a valid number```")
+                await send_dm(user, "```text\n[ERROR] Please enter a number between 1 and 5```")
+                continue
 
-    await send_dm(user, f"""```text
+        # Age input
+        await send_dm(user, "```text\nEnter your character's age (18-120):```")
+        while True:
+            age_msg = await wait_for_user_message(user)
+            try:
+                age = int(age_msg.content.strip())
+                if 18 <= age <= 120:
+                    creation_sessions[user_id][char_id].age = age
+                    break
+                else:
+                    await send_dm(user, "```text\n[ERROR] Age must be between 18 and 120```")
+            except ValueError:
+                await send_dm(user, "```text\n[ERROR] Please enter a valid number```")
+
+        # Confirmation
+        char = creation_sessions[user_id][char_id]
+        await send_dm(user, f"""```text
 >> PERSONAL DETAILS SUMMARY <<
 
-Name: {name}
-Gender: {gender}
-Age: {age}
+Name: {char.name}
+Gender: {char.gender}
+Age: {char.age}
 
 Confirm these details? (Y/N)```""")
-    
-    confirm = await wait_for_user_message(user)
-    if confirm.content.strip().upper() == "Y":
-        logger.debug(f"Creating new character for user {user_id}, char {char_id}")
-        char = Character(id=char_id, name=name, career="", gender=gender, age=age)
-        if user_id not in creation_sessions:
-            creation_sessions[user_id] = {}
-        creation_sessions[user_id][char_id] = char
-        logger.debug(f"Character created and stored in session: {char.name}")
-        await send_dm(user, "```text\n[OK] Personal details saved. Proceeding to Career Selection...\n```")
-        await asyncio.sleep(0.3)
-        await select_career(user, char_id)
-    else:
-        await send_dm(user, "```text\n[RESET] Let's enter the details again.\n```")
-        await select_personal_details(user, char_id)
+        
+        confirm = await wait_for_user_message(user)
+        if confirm.content.strip().upper() == "Y":
+            logger.debug(f"Personal details confirmed for user {user_id}, char {char_id}")
+            await send_dm(user, "```text\n[OK] Personal details saved. Proceeding to Career Selection...\n```")
+            await asyncio.sleep(0.3)
+            await select_career(user, char_id)
+        else:
+            await send_dm(user, "```text\n[RESET] Let's enter the details again.\n```")
+            await select_personal_details(user, char_id)
+            
+    except Exception as e:
+        logger.error(f"Error in personal details selection: {e}")
+        # Clean up the session
+        if user_id in creation_sessions and char_id in creation_sessions[user_id]:
+            del creation_sessions[user_id][char_id]
+        await send_dm(user, "```text\n[ERROR] Character creation failed. Please try again with /createcharacter.\n```")
+        raise
 
 async def select_career(user, char_id: str):
     user_id = str(user.id)
@@ -1047,7 +1087,6 @@ async def finalize_character(user_id, char_id: str, finalstep=False):
         summary.append(f"\n[G] Gear:")
         for item in char.inventory.items:
             if isinstance(item, ConsumableItem):
-                # Use default values if form/form_plural are not set
                 form = getattr(item, 'form', 'unit')
                 form_plural = getattr(item, 'form_plural', 'units')
                 summary.append(f"  • {item.name} (x{item.quantity} {form if item.quantity == 1 else form_plural})")
@@ -1069,10 +1108,48 @@ async def finalize_character(user_id, char_id: str, finalstep=False):
                 data_manager.characters[user_id] = {}
             data_manager.characters[user_id][char_id] = char
             
-            # Set as primary character if it's the user's first character
+            # Check if this is the user's first character
             if not data_manager.primary_characters.get(user_id):
+                logger.debug(f"Setting {char.name} as primary character for user {user_id}")
                 data_manager.primary_characters[user_id] = char_id
-                logger.debug(f"Set {char.name} as primary character for user {user_id}")
+                
+                # Find a guild where both the bot and user are present
+                for guild in bot.guilds:
+                    member = guild.get_member(user.id)
+                    if member:
+                        logger.debug(f"Found user in guild {guild.id}, attempting to update roles")
+                        success, message = await update_user_roles_and_nickname(
+                            user,
+                            char,
+                            guild
+                        )
+                        if success:
+                            await user.send(f"```text\n[OK] {message}\n```")
+                        else:
+                            await user.send(f"```text\n[WARNING] {message}\n```")
+                        break
+            else:
+                # Ask if they want to make this their primary character
+                await send_dm(user, f"""```text
+Would you like to make {char.name} your primary character? This will update your Discord role.
+(Y/N)```""")
+                primary_choice = await wait_for_user_message(user)
+                if primary_choice.content.strip().upper() == "Y":
+                    # Update primary character
+                    data_manager.primary_characters[user_id] = char_id
+                    # Update roles in all guilds where both bot and user are present
+                    for guild in bot.guilds:
+                        member = guild.get_member(user.id)
+                        if member:
+                            success, message = await update_user_roles_and_nickname(
+                                user,
+                                char,
+                                guild
+                            )
+                            if success:
+                                await user.send(f"```text\n[OK] {message}\n```")
+                            else:
+                                await user.send(f"```text\n[WARNING] {message}\n```")
             
             data_manager.save_characters()
             logger.debug(f"Characters after save: {data_manager.characters}")
@@ -1111,13 +1188,22 @@ async def edit_section(user_id, char_id, section):
 async def cmd_create(interaction: discord.Interaction):
     user = interaction.user
     user_id = str(user.id)
+    
+    # Check if user is already in a creation session
+    if user_id in creation_sessions and any(session for session in creation_sessions[user_id].values()):
+        await interaction.response.send_message(
+            "```text\n[ERROR] You already have a character creation session in progress. Please complete or cancel it first.\n```",
+            ephemeral=True
+        )
+        return
+    
     user_chars = data_manager.get_user_characters(user_id)
     
     # Generate a unique character ID
     char_id = f"{user.id}_{len(user_chars) + 1}"
     logger.debug(f"Starting character creation for user {user_id}, char {char_id}")
     
-    # Initialize the user's session if needed
+    # Initialize the user's session
     if user_id not in creation_sessions:
         creation_sessions[user_id] = {}
     
@@ -1125,11 +1211,35 @@ async def cmd_create(interaction: discord.Interaction):
     if char_id in creation_sessions[user_id]:
         del creation_sessions[user_id][char_id]
     
+    # Initialize the character in the session with default values
+    creation_sessions[user_id][char_id] = Character(
+        id=char_id,
+        name="",  # Will be set during creation
+        career="",  # Will be set during creation
+        gender="",
+        age=0,
+        attributes=Attributes(),
+        skills=Skills(),
+        talent="",
+        agenda="",
+        inventory=Inventory(),
+        signature_item="",
+        cash=0
+    )
+    
     await interaction.response.send_message(
         "[OK] Check your DMs to begin character creation.",
         ephemeral=True
     )
-    await select_personal_details(user, char_id)
+    
+    try:
+        await select_personal_details(user, char_id)
+    except Exception as e:
+        logger.error(f"Error in character creation: {e}")
+        # Clean up the session
+        if user_id in creation_sessions and char_id in creation_sessions[user_id]:
+            del creation_sessions[user_id][char_id]
+        await user.send("```text\n[ERROR] Character creation failed. Please try again with /createcharacter.\n```")
 
 @bot.tree.command(name="sheet", description="View your character sheet.")
 async def cmd_sheet(interaction: discord.Interaction):
@@ -1176,7 +1286,7 @@ async def cmd_sheet(interaction: discord.Interaction):
     
     await interaction.response.send_message('\n'.join(sheet), ephemeral=True)
 
-@bot.tree.command(name="deletecharacter", description="Delete your character. Use --force to skip confirmation.")
+@bot.tree.command(name="deletecharacter", description="Delete a character. Use --force to skip confirmation.")
 async def cmd_delete(interaction: discord.Interaction, *, options: str = ""):
     user = interaction.user
     user_id = str(user.id)
@@ -1184,69 +1294,63 @@ async def cmd_delete(interaction: discord.Interaction, *, options: str = ""):
     force = "--force" in options.split()
     
     if not chars:
-        await interaction.response.send_message("[ERROR] No character.", ephemeral=True)
+        await interaction.response.send_message("```text\n[ERROR] No characters found.\n```", ephemeral=True)
         return
-        
-    if force:
-        # Create a list of character IDs to delete
-        char_ids = list(chars.keys())
-        for char_id in char_ids:
-            del data_manager.characters[user_id][char_id]
-        # Also remove from primary characters if needed
-        if user_id in data_manager.primary_characters:
-            del data_manager.primary_characters[user_id]
-        data_manager.save_characters()
-        await interaction.response.send_message("[OK] All characters deleted.", ephemeral=True)
-        log_event(f"All characters deleted: {user_id} (User: {user.id})")
-        return
-        
-    class ConfirmView(discord.ui.View):
-        def __init__(self):
-            super().__init__(timeout=30) 
-            self.value = None
-
-        @discord.ui.button(label="Confirm Delete", style=discord.ButtonStyle.danger)
-        async def confirm(self, interaction: discord.Interaction, button: discord.ui.Button):
-            self.value = True
-            self.stop()
-
-        @discord.ui.button(label="Cancel", style=discord.ButtonStyle.secondary)
-        async def cancel(self, interaction: discord.Interaction, button: discord.ui.Button):
-            self.value = False
-            self.stop()
-
-        async def on_timeout(self):
-            self.value = False
-            self.stop()
-
-    view = ConfirmView()
-    await interaction.response.send_message(
-        "⚠️ Are you sure you want to delete all your characters? This cannot be undone.", 
-        view=view,
-        ephemeral=True
-    )
-
-    await view.wait()
     
-    if view.value:
-        # Create a list of character IDs to delete
-        char_ids = list(chars.keys())
-        for char_id in char_ids:
-            del data_manager.characters[user_id][char_id]
-        # Also remove from primary characters if needed
-        if user_id in data_manager.primary_characters:
-            del data_manager.primary_characters[user_id]
-        data_manager.save_characters()
-        await interaction.edit_original_response(
-            content="[OK] All characters deleted.",
-            view=None
-        )
-        log_event(f"All characters deleted: {user_id} (User: {user.id})")
-    else:
-        await interaction.edit_original_response(
-            content="[CANCEL] Character deletion cancelled.",
-            view=None
-        )
+    # Show character list
+    char_list = ["```text", ">> YOUR CHARACTERS <<", ""]
+    for char_id, char in chars.items():
+        is_primary = char_id == data_manager.primary_characters.get(user_id)
+        char_list.append(f"{'★ ' if is_primary else ''}{char.name} ({char.career})")
+    char_list.append("\nEnter the name of the character you want to delete:")
+    char_list.append("```")
+    
+    await interaction.response.send_message('\n'.join(char_list), ephemeral=True)
+    
+    def check(m):
+        return m.author.id == user.id and isinstance(m.channel, discord.DMChannel)
+    
+    try:
+        msg = await bot.wait_for("message", check=check, timeout=30.0)
+        char_name = msg.content.strip()
+        
+        # Find character by name
+        target_char = None
+        target_id = None
+        for char_id, char in chars.items():
+            if char.name.lower() == char_name.lower():
+                target_char = char
+                target_id = char_id
+                break
+        
+        if not target_char:
+            await user.send("```text\n[ERROR] Character not found.\n```")
+            return
+        
+        if target_id == data_manager.primary_characters.get(user_id) and len(chars) > 1:
+            await user.send("""```text
+This is your primary character. You must set another character as primary before deleting this one.
+Use the /characters command to set a different character as primary first.```""")
+            return
+        
+        if not force:
+            await user.send(f"""```text
+Are you sure you want to delete {target_char.name}?
+This action cannot be undone.
+Type CONFIRM to proceed.```""")
+            
+            confirm = await bot.wait_for("message", check=check, timeout=30.0)
+            if confirm.content.strip().upper() != "CONFIRM":
+                await user.send("```text\n[CANCELLED] Character deletion cancelled.\n```")
+                return
+        
+        if await delete_character(user_id, target_id, interaction.guild):
+            await user.send(f"```text\n[OK] {target_char.name} has been deleted.\n```")
+        else:
+            await user.send("```text\n[ERROR] Failed to delete character.\n```")
+            
+    except asyncio.TimeoutError:
+        await user.send("```text\n[INFO] Command timed out. Use /deletecharacter to start over.\n```")
 
 @bot.tree.command(name="reloaddata", description="Reload all game data from files.")
 @app_commands.checks.has_permissions(administrator=True)
@@ -1281,224 +1385,348 @@ async def cmd_characters(interaction: discord.Interaction):
     
     primary_id = data_manager.primary_characters.get(user_id)
     
-    # Create a view with buttons for each character
-    class CharacterView(discord.ui.View):
-        def __init__(self):
-            super().__init__(timeout=60)
-            
-            # Add a button for each character
-            for char_id, char in user_chars.items():
-                is_primary = char_id == primary_id
-                label = f"★ {char.name}" if is_primary else char.name
-                button = discord.ui.Button(
-                    label=label,
-                    custom_id=char_id,
-                    style=discord.ButtonStyle.primary if is_primary else discord.ButtonStyle.secondary
-                )
-                button.callback = self.button_callback
-                self.add_item(button)
-        
-        async def button_callback(self, interaction: discord.Interaction):
-            try:
-                char_id = interaction.data["custom_id"]
-                char = user_chars[char_id]
-                
-                # Create a new view for character actions
-                class CharacterActionView(discord.ui.View):
-                    def __init__(self):
-                        super().__init__(timeout=60)
-                        
-                        # Add Set Primary button if not already primary
-                        if char_id != primary_id:
-                            set_primary = discord.ui.Button(
-                                label="Set as Primary",
-                                style=discord.ButtonStyle.success,
-                                custom_id="set_primary"
-                            )
-                            set_primary.callback = self.set_primary_callback
-                            self.add_item(set_primary)
-                        
-                        # Add Delete button
-                        delete = discord.ui.Button(
-                            label="Delete Character",
-                            style=discord.ButtonStyle.danger,
-                            custom_id="delete"
-                        )
-                        delete.callback = self.delete_callback
-                        self.add_item(delete)
-                        
-                        # Add View Sheet button
-                        view_sheet = discord.ui.Button(
-                            label="View Sheet",
-                            style=discord.ButtonStyle.secondary,
-                            custom_id="view_sheet"
-                        )
-                        view_sheet.callback = self.view_sheet_callback
-                        self.add_item(view_sheet)
-                        
-                        # Add Back button
-                        back = discord.ui.Button(
-                            label="← Back to List",
-                            style=discord.ButtonStyle.secondary,
-                            custom_id="back"
-                        )
-                        back.callback = self.back_callback
-                        self.add_item(back)
-                        
-                        # Add Close button
-                        close = discord.ui.Button(
-                            label="Close",
-                            style=discord.ButtonStyle.secondary,
-                            custom_id="close"
-                        )
-                        close.callback = self.close_callback
-                        self.add_item(close)
-                    
-                    async def set_primary_callback(self, interaction: discord.Interaction):
-                        if data_manager.set_primary_character(user_id, char_id):
-                            await interaction.response.send_message(
-                                f"```text\n[OK] {char.name} is now your primary character.\n```",
-                                ephemeral=True
-                            )
-                        else:
-                            await interaction.response.send_message(
-                                "```text\n[ERROR] Failed to set primary character.\n```",
-                                ephemeral=True
-                            )
-                    
-                    async def delete_callback(self, interaction: discord.Interaction):
-                        # Create confirmation view
-                        class ConfirmDeleteView(discord.ui.View):
-                            def __init__(self):
-                                super().__init__(timeout=30)
-                            
-                            @discord.ui.button(label="Confirm Delete", style=discord.ButtonStyle.danger)
-                            async def confirm(self, interaction: discord.Interaction, button: discord.ui.Button):
-                                try:
-                                    del data_manager.characters[user_id][char_id]
-                                    if primary_id == char_id:
-                                        del data_manager.primary_characters[user_id]
-                                    data_manager.save_characters()
-                                    await interaction.response.send_message(
-                                        f"```text\n[OK] {char.name} has been deleted.\n```",
-                                        ephemeral=True
-                                    )
-                                except Exception as e:
-                                    logger.error(f"Error deleting character: {e}")
-                                    await interaction.response.send_message(
-                                        "```text\n[ERROR] Failed to delete character.\n```",
-                                        ephemeral=True
-                                    )
-                            
-                            @discord.ui.button(label="Cancel", style=discord.ButtonStyle.secondary)
-                            async def cancel(self, interaction: discord.Interaction, button: discord.ui.Button):
-                                await interaction.response.send_message(
-                                    "```text\n[CANCEL] Character deletion cancelled.\n```",
-                                    ephemeral=True
-                                )
-                        
-                        await interaction.response.send_message(
-                            f"```text\n⚠️ Are you sure you want to delete {char.name}? This cannot be undone.\n```",
-                            view=ConfirmDeleteView(),
-                            ephemeral=True
-                        )
-                    
-                    async def view_sheet_callback(self, interaction: discord.Interaction):
-                        sheet = ["```text", ">> CHARACTER SHEET <<"]
-                        sheet.append(f"\nName: {char.name}")
-                        sheet.append(f"Career: {char.career}")
-                        sheet.append("\nAttributes:")
-                        for attr in ["Strength", "Agility", "Wits", "Empathy"]:
-                            value = getattr(char.attributes, attr.lower())
-                            sheet.append(f"  {attr}: {value} {format_attribute_bar(value)}")
-                        sheet.append("\nSkills:")
-                        for skill_name, value in char.skills.__dict__.items():
-                            if value > 0:
-                                name = skill_name.replace('_', ' ').title()
-                                sheet.append(f"  {name}: {value} {format_skill_bar(value)}")
-                        sheet.append(f"\nTalent: {char.talent}")
-                        sheet.append(f"Personal Agenda: {char.agenda}")
-                        sheet.append("\nGear:")
-                        for item in char.inventory.items:
-                            if isinstance(item, ConsumableItem):
-                                form = getattr(item, 'form', 'unit')
-                                form_plural = getattr(item, 'form_plural', 'units')
-                                sheet.append(f"  • {item.name} (x{item.quantity} {form if item.quantity == 1 else form_plural})")
-                            else:
-                                sheet.append(f"  • {str(item)}")
-                        sheet.append(f"\nSignature Item: {char.signature_item}")
-                        sheet.append(f"Cash: ${char.cash}")
-                        sheet.append("```")
-                        
-                        await interaction.response.send_message('\n'.join(sheet), ephemeral=True)
-                    
-                    async def back_callback(self, interaction: discord.Interaction):
-                        # Recreate the character list view
-                        char_list = ["```text", ">> YOUR CHARACTERS <<", ""]
-                        for char_id, char in user_chars.items():
-                            is_primary = char_id == primary_id
-                            char_list.append(f"{'★ ' if is_primary else ''}{char.name} ({char.career})")
-                        char_list.append("\nClick a character to manage them.")
-                        char_list.append("```")
-                        
-                        await interaction.response.edit_message(
-                            content='\n'.join(char_list),
-                            view=CharacterView()
-                        )
-                    
-                    async def close_callback(self, interaction: discord.Interaction):
-                        try:
-                            await interaction.response.edit_message(
-                                content="```text\n[CLOSED] Character management interface closed.\n```",
-                                view=None
-                            )
-                        except Exception as e:
-                            logger.error(f"Error closing character interface: {e}")
-                            await interaction.response.send_message(
-                                "```text\n[ERROR] Failed to close interface.\n```",
-                                ephemeral=True
-                            )
-                
-                # Create character summary
-                summary = ["```text", f">> CHARACTER: {char.name} <<"]
-                summary.append(f"Career: {char.career}")
-                summary.append(f"Gender: {char.gender}")
-                summary.append(f"Age: {char.age}")
-                summary.append("\nKey Attributes:")
-                for attr in ["Strength", "Agility", "Wits", "Empathy"]:
-                    value = getattr(char.attributes, attr.lower())
-                    summary.append(f"  {attr}: {value}")
-                summary.append(f"\nTalent: {char.talent}")
-                summary.append(f"Cash: ${char.cash}")
-                summary.append("\nSelect an action:")
-                summary.append("```")
-                
-                await interaction.response.send_message(
-                    '\n'.join(summary),
-                    view=CharacterActionView(),
-                    ephemeral=True
-                )
-                
-            except Exception as e:
-                logger.error(f"Error in button callback: {e}")
-                await interaction.response.send_message(
-                    "```text\n[ERROR] An error occurred while managing character.\n```",
-                    ephemeral=True
-                )
-    
-    # Show the character list
+    # Create character list message
     char_list = ["```text", ">> YOUR CHARACTERS <<", ""]
-    for char_id, char in user_chars.items():
+    for i, (char_id, char) in enumerate(user_chars.items(), 1):
         is_primary = char_id == primary_id
-        char_list.append(f"{'★ ' if is_primary else ''}{char.name} ({char.career})")
-    char_list.append("\nClick a character to manage them.")
+        char_list.append(f"[{i}] {char.name} ({char.career}){' <<<PRIMARY' if is_primary else ''}")
+    char_list.append("\nCommands:")
+    char_list.append("view [number] - View detailed character sheet")
+    char_list.append("primary [number] - Set as primary character")
+    char_list.append("delete [number] - Delete character")
+    char_list.append("exit - Exit character management")
     char_list.append("```")
     
-    await interaction.response.send_message(
-        "\n".join(char_list),
-        view=CharacterView(),
-        ephemeral=True
-    )
+    await interaction.response.send_message('\n'.join(char_list), ephemeral=True)
+    
+    def check(m):
+        return m.author.id == user.id and isinstance(m.channel, discord.DMChannel)
+    
+    while True:
+        try:
+            msg = await bot.wait_for("message", check=check, timeout=60.0)
+            content = msg.content.strip().lower()
+            
+            if content == "exit":
+                await user.send("```text\n[INFO] Exiting character management.\n```")
+                break
+            
+            # Parse command
+            parts = content.split(maxsplit=1)
+            if len(parts) != 2:
+                await user.send("```text\n[ERROR] Invalid command format. Use: command [number] or 'exit'\n```")
+                continue
+                
+            command, char_num = parts
+            
+            # Convert character number to index
+            try:
+                char_index = int(char_num) - 1
+                if char_index < 0 or char_index >= len(user_chars):
+                    await user.send("```text\n[ERROR] Invalid character number.\n```")
+                    continue
+            except ValueError:
+                await user.send("```text\n[ERROR] Please enter a valid number.\n```")
+                continue
+            
+            # Get character by index
+            char_id = list(user_chars.keys())[char_index]
+            target_char = user_chars[char_id]
+            
+            if command == "view":
+                # Show detailed character sheet
+                sheet = ["```text", ">> CHARACTER SHEET <<"]
+                sheet.append(f"\nName: {target_char.name}")
+                sheet.append(f"Career: {target_char.career}")
+                sheet.append("\nAttributes:")
+                for attr in ["Strength", "Agility", "Wits", "Empathy"]:
+                    value = getattr(target_char.attributes, attr.lower())
+                    sheet.append(f"  {attr}: {value} {format_attribute_bar(value)}")
+                sheet.append("\nSkills:")
+                for skill_name, value in target_char.skills.__dict__.items():
+                    if value > 0:
+                        name = skill_name.replace('_', ' ').title()
+                        sheet.append(f"  {name}: {value} {format_skill_bar(value)}")
+                sheet.append(f"\nTalent: {target_char.talent}")
+                sheet.append(f"Personal Agenda: {target_char.agenda}")
+                sheet.append("\nGear:")
+                for item in target_char.inventory.items:
+                    if isinstance(item, ConsumableItem):
+                        form = getattr(item, 'form', 'unit')
+                        form_plural = getattr(item, 'form_plural', 'units')
+                        sheet.append(f"  • {item.name} (x{item.quantity} {form if item.quantity == 1 else form_plural})")
+                    else:
+                        sheet.append(f"  • {str(item)}")
+                sheet.append(f"\nSignature Item: {target_char.signature_item}")
+                sheet.append(f"Cash: ${target_char.cash}")
+                sheet.append("```")
+                await user.send('\n'.join(sheet))
+                
+            elif command == "primary":
+                if char_id == primary_id:
+                    await user.send("```text\n[INFO] This character is already your primary character.\n```")
+                    continue
+                    
+                await user.send(f"""```text
+Are you sure you want to set {target_char.name} as your primary character?
+This will update your Discord role and nickname.
+Type CONFIRM to proceed.```""")
+                
+                confirm = await bot.wait_for("message", check=check, timeout=30.0)
+                if confirm.content.strip().upper() != "CONFIRM":
+                    await user.send("```text\n[CANCELLED] Primary character change cancelled.\n```")
+                    continue
+                
+                if await set_primary_character(user_id, char_id, interaction.guild):
+                    await user.send(f"```text\n[OK] {target_char.name} is now your primary character.\n```")
+                else:
+                    await user.send("```text\n[ERROR] Failed to set primary character.\n```")
+                
+            elif command == "delete":
+                if char_id == primary_id and len(user_chars) > 1:
+                    await user.send("""```text
+This is your primary character. You must set another character as primary before deleting this one.
+Use the 'primary' command to set a different character as primary first.```""")
+                    continue
+                
+                await user.send(f"""```text
+Are you sure you want to delete {target_char.name}?
+This action cannot be undone.
+Type CONFIRM to proceed.```""")
+                
+                confirm = await bot.wait_for("message", check=check, timeout=30.0)
+                if confirm.content.strip().upper() != "CONFIRM":
+                    await user.send("```text\n[CANCELLED] Character deletion cancelled.\n```")
+                    continue
+                
+                if await delete_character(user_id, char_id, interaction.guild):
+                    await user.send(f"```text\n[OK] {target_char.name} has been deleted.\n```")
+                    # Update the character list
+                    user_chars = data_manager.get_user_characters(user_id)
+                    if not user_chars:
+                        await user.send("```text\nYou have no characters remaining.\n```")
+                        return
+                else:
+                    await user.send("```text\n[ERROR] Failed to delete character.\n```")
+                
+            else:
+                await user.send("```text\n[ERROR] Invalid command. Use: view, primary, delete, or exit.\n```")
+                
+        except asyncio.TimeoutError:
+            await user.send("```text\n[INFO] Command timed out. Use /characters to start over.\n```")
+            break
+
+# Career to emoji mapping
+CAREER_EMOJIS = {
+    "Colonial Marine": "🔫",
+    "Colonial Marshal": "⭐",
+    "Company Agent": "💼",
+    "Medic": "💉",
+    "Pilot": "✈️",
+    "Roughneck": "🛠️",
+    "Kid": "🧸",
+    "Officer": "🎖️",
+    "Wildcatter": "⛏️",
+    "Scientist": "🧪",
+    "Entertainer": "🎤"
+}
+
+async def update_user_roles_and_nickname(user: discord.User, character: Character, guild: discord.Guild) -> Tuple[bool, str]:
+    """Update a user's roles and nickname based on their character."""
+    try:
+        member = guild.get_member(user.id)
+        if not member:
+            return False, f"User {user.name} not found in guild {guild.name}"
+
+        # Get the career role with emoji
+        emoji = CAREER_EMOJIS.get(character.career, "👤")
+        role_name = f"{emoji} {character.career}"
+        career_role = discord.utils.get(guild.roles, name=role_name)
+        
+        if not career_role:
+            # Try to create the role if it doesn't exist
+            try:
+                career_role = await guild.create_role(
+                    name=role_name,
+                    reason=f"Career role for {character.name}",
+                    hoist=True,
+                    mentionable=False
+                )
+                logger.debug(f"Created new role: {role_name}")
+            except discord.Forbidden:
+                return False, f"Bot lacks permission to create role {role_name}"
+            except discord.HTTPException as e:
+                return False, f"Failed to create role {role_name}: {str(e)}"
+
+        # Remove all career roles first
+        success, message = await remove_character_roles(user, guild)
+        if not success:
+            return False, f"Failed to remove existing roles: {message}"
+
+        # Add the new career role
+        try:
+            await member.add_roles(career_role)
+            logger.debug(f"Added role {career_role.name} to user {user.name}")
+        except discord.Forbidden:
+            return False, f"Bot lacks permission to add role {career_role.name}"
+        except discord.HTTPException as e:
+            return False, f"Failed to add role {career_role.name}: {str(e)}"
+
+        # Update nickname if user is not the server owner
+        if member.id != guild.owner_id:
+            try:
+                # First try with full format
+                new_nickname = f"{member.name} | {emoji} {character.name}"
+                # If that's too long, try with just the character name
+                if len(new_nickname) > 32:
+                    new_nickname = f"{emoji} {character.name}"
+                # If that's still too long, truncate the character name
+                if len(new_nickname) > 32:
+                    max_name_length = 32 - len(emoji) - 2  # -2 for the space and emoji
+                    new_nickname = f"{emoji} {character.name[:max_name_length]}"
+                
+                await member.edit(nick=new_nickname)
+                logger.debug(f"Updated nickname to {new_nickname} for user {user.name}")
+            except discord.Forbidden:
+                return False, f"Bot lacks permission to update nickname for {user.name}"
+            except discord.HTTPException as e:
+                return False, f"Failed to update nickname: {str(e)}"
+            return True, f"Updated roles and nickname for {user.name}"
+        else:
+            return True, f"Updated roles for {user.name} (nickname unchanged for server owner)"
+
+    except Exception as e:
+        logger.error(f"Error updating roles and nickname: {e}")
+        return False, f"Error updating roles and nickname: {str(e)}"
+
+async def remove_character_roles(user: discord.User, guild: discord.Guild) -> Tuple[bool, str]:
+    """Remove all career roles from a user."""
+    try:
+        member = guild.get_member(user.id)
+        if not member:
+            return False, f"User {user.name} not found in guild {guild.name}"
+
+        # Get all career roles (those with emojis)
+        career_roles = [role for role in guild.roles if any(emoji in role.name for emoji in CAREER_EMOJIS.values())]
+        
+        # Remove each career role
+        for role in career_roles:
+            if role in member.roles:
+                try:
+                    await member.remove_roles(role)
+                    logger.debug(f"Removed role {role.name} from user {user.name}")
+                except discord.Forbidden:
+                    return False, f"Bot lacks permission to remove role {role.name}"
+                except discord.HTTPException as e:
+                    return False, f"Failed to remove role {role.name}: {str(e)}"
+
+        return True, f"Removed all career roles from {user.name}"
+    except Exception as e:
+        logger.error(f"Error removing roles: {e}")
+        return False, f"Error removing roles: {str(e)}"
+
+async def set_primary_character(user_id: str, char_id: str, guild: Optional[discord.Guild] = None) -> bool:
+    """Set a character as the user's primary character and update roles."""
+    try:
+        user = await bot.fetch_user(int(user_id))
+        character = data_manager.characters[user_id][char_id]
+        
+        # Update primary character
+        data_manager.primary_characters[user_id] = char_id
+        data_manager.save_characters()
+        
+        # Update roles in all guilds where both bot and user are present
+        if guild:
+            success, message = await update_user_roles_and_nickname(user, character, guild)
+            if not success:
+                logger.error(f"Failed to update roles: {message}")
+                return False
+        else:
+            for guild in bot.guilds:
+                member = guild.get_member(user.id)
+                if member:
+                    success, message = await update_user_roles_and_nickname(user, character, guild)
+                    if not success:
+                        logger.error(f"Failed to update roles in guild {guild.name}: {message}")
+        
+        return True
+    except Exception as e:
+        logger.error(f"Error setting primary character: {e}")
+        return False
+
+async def delete_character(user_id: str, char_id: str, guild: Optional[discord.Guild] = None) -> bool:
+    """Delete a character and handle primary character reassignment."""
+    try:
+        user = await bot.fetch_user(int(user_id))
+        # Store if this was the primary character
+        was_primary = char_id == data_manager.primary_characters.get(user_id)
+        
+        # Delete the character
+        del data_manager.characters[user_id][char_id]
+        
+        # Handle primary character reassignment if needed
+        if was_primary:
+            remaining_chars = data_manager.get_user_characters(user_id)
+            if remaining_chars:
+                # Ask if they want to switch to another character
+                char_list = ["```text", ">> SELECT NEW PRIMARY CHARACTER <<", ""]
+                for cid, c in remaining_chars.items():
+                    char_list.append(f"[{cid}] {c.name} ({c.career})")
+                char_list.append("\nEnter the character ID to set as primary, or 'N' to create a new character.")
+                char_list.append("```")
+                
+                await user.send('\n'.join(char_list))
+                while True:
+                    choice = await wait_for_user_message(user)
+                    if choice.content.strip().upper() == "N":
+                        # Start character creation
+                        await user.send("```text\nStarting character creation process...\n```")
+                        await cmd_create(discord.Interaction(bot, user))
+                        return True
+                    
+                    # Check if the choice is a valid character ID
+                    if choice.content.strip() in remaining_chars:
+                        new_primary_id = choice.content.strip()
+                        await set_primary_character(user_id, new_primary_id, guild)
+                        await user.send(f"```text\n[OK] Set {remaining_chars[new_primary_id].name} as your primary character.\n```")
+                        return True
+                    else:
+                        await user.send("```text\n[ERROR] Invalid choice. Please enter a valid character ID or 'N'.\n```")
+            else:
+                # No characters left - ask if they want to create a new one
+                await user.send("""```text
+You have no characters remaining. Would you like to:
+[1] Create a new character
+[2] Continue without a character (you can still observe)
+
+Enter your choice (1 or 2):```""")
+                
+                while True:
+                    choice = await wait_for_user_message(user)
+                    if choice.content.strip() == "1":
+                        # Start character creation
+                        await user.send("```text\nStarting character creation process...\n```")
+                        await cmd_create(discord.Interaction(bot, user))
+                        return True
+                    elif choice.content.strip() == "2":
+                        # Remove all career roles
+                        if guild:
+                            success, message = await remove_character_roles(user, guild)
+                            if not success:
+                                logger.error(f"Failed to remove roles: {message}")
+                        # Remove from primary characters
+                        if user_id in data_manager.primary_characters:
+                            del data_manager.primary_characters[user_id]
+                        await user.send("```text\n[OK] You will continue without a character. You can still observe the game.\n```")
+                        return True
+                    else:
+                        await user.send("```text\n[ERROR] Please enter 1 or 2.\n```")
+        
+        data_manager.save_characters()
+        return True
+    except Exception as e:
+        logger.error(f"Error deleting character: {e}")
+        return False
 
 # Start the bot
 bot.run(os.getenv('DISCORD_TOKEN'))
