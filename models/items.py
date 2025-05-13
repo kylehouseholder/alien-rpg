@@ -52,6 +52,7 @@ class Inventory:
                 if existing_item.name == item.name:
                     existing_item.quantity += item.quantity
                     return
+        # Only append if we didn't find a matching item to stack with
         self.items.append(item)
         
     def remove_item(self, item_name: str, quantity: int = 1) -> Optional[Item]:
