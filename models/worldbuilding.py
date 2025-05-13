@@ -1,6 +1,6 @@
 import random
 from enum import Enum
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import List, Optional, Tuple, Dict, Union
 import os
 import json
@@ -373,9 +373,10 @@ TEMPERATURE_CATEGORIES: List[TemperatureCategory] = [
     for entry in _temperature_categories_json
 ]
 
-def get_temperature_type(roll: int, atmosphere: AtmosphereType) -> TemperatureType:
+def get_temperature_type(roll: int, atmosphere: AtmosphereType, body_type: Optional[PlanetType] = None) -> TemperatureType:
     """
     Modify roll by atmosphere traits, clamp, and lookup temperature.
+    For ice planets, only allow Frozen or Cold temperatures.
     """
     if atmosphere == AtmosphereType.THIN:
         roll -= 4
@@ -383,6 +384,11 @@ def get_temperature_type(roll: int, atmosphere: AtmosphereType) -> TemperatureTy
         roll += 1
     elif atmosphere in (AtmosphereType.CORROSIVE, AtmosphereType.INFILTRATING):
         roll += 6
+    
+    # For ice planets, force temperature to be Frozen or Cold
+    if body_type == PlanetType.ICE:
+        roll = min(roll, 5)  # Cap at 5 to ensure only Frozen (2-3) or Cold (4-5)
+    
     roll = max(2, min(12, roll))
     for cat in TEMPERATURE_CATEGORIES:
         if cat.roll_min <= roll <= cat.roll_max:
@@ -716,6 +722,7 @@ class OrbitalBody:
     colony_name: Optional[str] = None  # Name of the colony if present
     moon_index: Optional[int] = None  # Index of the moon if it's a moon
     parent_name: Optional[str] = None  # Name of the parent body if it's a moon
+    distance_from_parent_km: Optional[int] = None  # Distance from parent planet for moons
     size_category: Optional[PlanetSizeCategory] = None  # Size and gravity information
     atmosphere: Optional[AtmosphereType] = None  # Atmosphere type if known
     temperature: Optional[TemperatureType] = None  # Temperature type if known
@@ -894,7 +901,7 @@ def generate_orbital_body_details(body_type: PlanetType, distance_au: float, sta
     """Generate and print details for any orbital body (planet or moon)."""
     # Determine exploration status
     exploration_roll = roll_2d6()
-    exploration_status = determine_exploration_status(exploration_roll)
+    exploration_status = determine_exploration_status_for_body(body_type, exploration_roll)
     
     # Generate name based on star and exploration status
     # Convert moon_index to 1-based for get_moon_letter
@@ -947,7 +954,7 @@ def generate_orbital_body_details(body_type: PlanetType, distance_au: float, sta
                         print(f"Atmosphere: {dp_atmosphere.value}")
                         
                         dp_temp_roll = roll_2d6()
-                        dp_temperature = get_temperature_type(dp_temp_roll, dp_atmosphere)
+                        dp_temperature = get_temperature_type(dp_temp_roll, dp_atmosphere, body_type)
                         print(f"Temperature: {dp_temperature.value}")
         
         # Special features (12 on 2d6)
@@ -999,7 +1006,7 @@ def generate_orbital_body_details(body_type: PlanetType, distance_au: float, sta
             
             # Temperature
             temp_roll = roll_2d6()
-            temperature = get_temperature_type(temp_roll, atmosphere)
+            temperature = get_temperature_type(temp_roll, atmosphere, body_type)
             print(f"Temperature: {temperature.value}")
             
             # Geosphere
@@ -1068,18 +1075,13 @@ def generate_orbital_body_details(body_type: PlanetType, distance_au: float, sta
                 colony_name = generate_colony_name(colony_size.size, mission, allegiance)
                 print(f"Colony Name: {colony_name}")
 
-def determine_exploration_status(roll: int) -> ExplorationStatus:
-    """
-    Determine exploration status based on a 2d6 roll.
-    """
-    if roll <= 3:
-        return ExplorationStatus.UNDISCOVERED
-    elif roll <= 6:
-        return ExplorationStatus.DETECTED
-    elif roll <= 9:
-        return ExplorationStatus.SURVEYED
-    else:
-        return ExplorationStatus.EXPLORED
+def determine_exploration_status_for_body(body_type: PlanetType, roll: int) -> ExplorationStatus:
+    """Determine exploration status, capping at 'surveyed' for gas giants and asteroid belts."""
+    status = determine_exploration_status(roll)
+    if body_type in [PlanetType.GAS_GIANT, PlanetType.ASTEROID_BELT]:
+        if status == ExplorationStatus.EXPLORED:
+            return ExplorationStatus.SURVEYED
+    return status
 
 def get_gas_giant_composition() -> str:
     """Return a random gas giant composition."""
@@ -1562,3 +1564,57 @@ def generate_asteroid_belt_name(star_designation: str, distance_au: float) -> st
 def generate_dwarf_planet_name(star_designation: str, sequence_number: int) -> str:
     """Generate a name for a dwarf planet."""
     return f"{star_designation}-DWF-{sequence_number}"
+
+@dataclass
+class OrbitalSystem:
+    """Represents a hierarchical orbital system (star system or gas giant system)."""
+    id: str  # e.g., "A" for star system, "A.3" for gas giant
+    parent_id: Optional[str] = None  # None for star system, parent's ID for subsystems
+    name: str = ""  # Will be set during naming phase
+    exploration_status: ExplorationStatus = ExplorationStatus.UNDISCOVERED
+    bodies: List[OrbitalBody] = field(default_factory=list)
+    exploration_score: float = 0.0
+    max_exploration_score: float = 0.0
+    
+    def add_body(self, body: OrbitalBody) -> None:
+        """Add a body to the system and update exploration scores."""
+        self.bodies.append(body)
+        self._update_exploration_scores()
+    
+    def _update_exploration_scores(self) -> None:
+        """Calculate and update exploration scores for the system."""
+        # Calculate max possible score based on body types
+        self.max_exploration_score = sum(self._get_max_score_for_body(b) for b in self.bodies)
+        
+        # Calculate actual score based on exploration status
+        self.exploration_score = sum(self._get_actual_score_for_body(b) for b in self.bodies)
+    
+    def _get_max_score_for_body(self, body: OrbitalBody) -> float:
+        """Calculate the maximum possible score for a body."""
+        # Base score based on exploration status
+        if body.type == PlanetType.ASTEROID_BELT:
+            return 2.0  # Asteroid belts can only be surveyed
+        elif body.type == PlanetType.GAS_GIANT:
+            return 2.0  # Gas giants can only be surveyed
+        else:
+            return 3.0  # Other bodies can be explored
+        
+    def _get_actual_score_for_body(self, body: OrbitalBody) -> float:
+        """Calculate the actual score for a body based on its status."""
+        # Base score based on exploration status
+        if body.exploration_status == ExplorationStatus.UNDISCOVERED:
+            return 0.0
+        elif body.exploration_status == ExplorationStatus.DETECTED:
+            return 1.0
+        elif body.exploration_status == ExplorationStatus.SURVEYED:
+            return 2.0
+        elif body.exploration_status == ExplorationStatus.EXPLORED:
+            return 3.0
+        
+        return 0.0  # Default case
+    
+    def get_exploration_percentage(self) -> float:
+        """Get the percentage of maximum exploration achieved."""
+        if self.max_exploration_score == 0:
+            return 0.0
+        return (self.exploration_score / self.max_exploration_score) * 100
