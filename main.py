@@ -3,10 +3,9 @@ from discord.ext import commands        # type: ignore
 from discord import app_commands        # type: ignore
 import json
 import os
-import random
 import asyncio
 from dotenv import load_dotenv
-from typing import Dict, List, Optional, Union, Tuple
+from typing import Dict, Optional, Tuple
 from models.character import Character, Attributes, Skills
 from models.items import Item, ConsumableItem, Inventory
 from models.dice import DiceRoll
