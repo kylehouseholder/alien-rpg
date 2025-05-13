@@ -12,6 +12,12 @@ from models.items import Item, ConsumableItem, Inventory
 from models.dice import DiceRoll
 import datetime
 import re
+import copy  # Add at the top with other imports
+import logging
+
+# Set up logging
+logging.basicConfig(level=logging.DEBUG)
+logger = logging.getLogger(__name__)
 
 # Load environment variables
 load_dotenv()
@@ -32,12 +38,13 @@ class DataManager:
     def __init__(self):
         self.CHARACTER_FILE = "characters.json"
         self.PLAYERGEN_FILE = "data/playerGenData.json"
-        self.characters: Dict[str, Character] = {}
+        self.characters: Dict[str, Dict[str, Character]] = {}  # user_id -> {char_id -> Character}
+        self.primary_characters: Dict[str, str] = {}  # user_id -> primary_char_id
         self.playergen: Dict = {}
         
         if not os.path.exists(self.CHARACTER_FILE):
             with open(self.CHARACTER_FILE, "w") as f:
-                json.dump({}, f)
+                json.dump({"characters": {}, "primary_characters": {}}, f)
                 
         self.reload_all()
     
@@ -48,16 +55,61 @@ class DataManager:
     def reload_characters(self):
         try:
             with open(self.CHARACTER_FILE, "r") as f:
-                char_data = json.load(f)
+                data = json.load(f)
+                self.primary_characters = data.get("primary_characters", {})
+                
+                # Convert dictionary data to Character objects
                 self.characters = {}
-                for char_id, data in char_data.items():
-                    try:
-                        self.characters[char_id] = Character.from_json(char_id, data)
-                    except Exception as e:
-                        print(f"Error loading character {char_id}: {e}")
+                for user_id, user_chars in data.get("characters", {}).items():
+                    self.characters[user_id] = {}
+                    for char_id, char_data in user_chars.items():
+                        # Convert attributes
+                        attrs = Attributes(
+                            strength=char_data["Attributes"]["Strength"],
+                            agility=char_data["Attributes"]["Agility"],
+                            wits=char_data["Attributes"]["Wits"],
+                            empathy=char_data["Attributes"]["Empathy"]
+                        )
+                        
+                        # Convert skills
+                        skills = Skills()
+                        for skill_name, value in char_data["Skills"].items():
+                            setattr(skills, skill_name.lower(), value)
+                        
+                        # Convert inventory
+                        inventory = Inventory()
+                        for gear_item in char_data["Gear"]:
+                            if "x" in gear_item:
+                                name, quantity = gear_item.split(" (x")
+                                quantity = int(quantity.rstrip(")"))
+                                if any(word in name.lower() for word in ["pills", "rounds", "doses"]):
+                                    inventory.add_item(ConsumableItem(name=name, quantity=quantity))
+                                else:
+                                    inventory.add_item(Item(name=name, quantity=quantity))
+                            else:
+                                inventory.add_item(Item(name=gear_item))
+                        
+                        # Create Character object
+                        char = Character(
+                            id=char_id,
+                            name=char_data["Name"],
+                            career=char_data["Career"],
+                            gender=char_data["Gender"],
+                            age=char_data["Age"],
+                            attributes=attrs,
+                            skills=skills,
+                            talent=char_data["Talent"],
+                            agenda=char_data["Agenda"],
+                            inventory=inventory,
+                            signature_item=char_data["Signature Item"],
+                            cash=char_data["Cash"]
+                        )
+                        self.characters[user_id][char_id] = char
+                
         except Exception as e:
             print(f"Error loading characters file: {e}")
             self.characters = {}
+            self.primary_characters = {}
     
     def reload_playergen(self):
         try:
@@ -67,26 +119,65 @@ class DataManager:
             print(f"Error loading playergen: {e}")
             self.playergen = {}
     
+    def get_playergen(self) -> Dict:
+        """Get the playergen data"""
+        return self.playergen
+    
     def save_characters(self):
         try:
-            char_data = {
-                char_id: char.to_json() 
-                for char_id, char in self.characters.items()
+            data = {
+                "characters": {
+                    user_id: {
+                        char_id: copy.deepcopy(char.to_json())
+                        for char_id, char in user_chars.items()
+                    }
+                    for user_id, user_chars in self.characters.items()
+                },
+                "primary_characters": self.primary_characters
             }
             with open(self.CHARACTER_FILE, "w") as f:
-                json.dump(char_data, f, indent=2)
+                json.dump(data, f, indent=2)
         except Exception as e:
             print(f"Error saving characters: {e}")
     
-    def get_characters(self) -> Dict[str, Character]:
+    def get_characters(self) -> Dict[str, Dict[str, Character]]:
         return self.characters
     
-    def get_playergen(self) -> Dict:
-        return self.playergen
+    def get_user_characters(self, user_id: str) -> Dict[str, Character]:
+        return self.characters.get(user_id, {})
+
+    def get_primary_character(self, user_id: str) -> Optional[Character]:
+        """Get a user's primary character"""
+        if user_id not in self.primary_characters:
+            return None
+        char_id = self.primary_characters[user_id]
+        return self.characters.get(user_id, {}).get(char_id)
+    
+    def set_primary_character(self, user_id: str, char_id: str) -> bool:
+        """Set a user's primary character. Returns True if successful."""
+        try:
+            # Check if the user has any characters
+            if user_id not in self.characters:
+                logger.error(f"User {user_id} has no characters")
+                return False
+            
+            # Check if the character exists for this user
+            if char_id not in self.characters[user_id]:
+                logger.error(f"Character {char_id} not found for user {user_id}")
+                return False
+            
+            # Set the primary character
+            self.primary_characters[user_id] = char_id
+            self.save_characters()
+            logger.debug(f"Set primary character for user {user_id} to {char_id}")
+            return True
+        except Exception as e:
+            logger.error(f"Error setting primary character: {e}")
+            return False
 
 data_manager = DataManager()
 
-creation_sessions: Dict[str, Character] = {}
+creation_sessions: Dict[str, Dict[str, Character]] = {}
 
 intents = discord.Intents.all()
 bot = commands.Bot(command_prefix="!", intents=intents)
@@ -126,15 +217,20 @@ async def send_dm(user, content, view=None):
 
 # --- PATCH all user input to log responses ---
 async def wait_for_user_message(user, *args, **kwargs):
-    msg = await bot.wait_for("message", check=check_message(user), *args, **kwargs)
-    debug_log(msg.content, sender="USER", user=str(user))
-    return msg
+    def check(m):
+        return m.author.id == user.id and isinstance(m.channel, discord.DMChannel)
+    
+    try:
+        msg = await bot.wait_for("message", check=check, *args, **kwargs)
+        debug_log(msg.content, sender="USER", user=str(user))
+        return msg
+    except Exception as e:
+        logger.error(f"Error waiting for user message: {e}")
+        raise
 
-def check_message(user):
-    return lambda m: m.author.id == user.id and isinstance(m.channel, discord.DMChannel)
-
-async def select_personal_details(user):
+async def select_personal_details(user, char_id: str):
     user_id = str(user.id)
+    logger.debug(f"Starting personal details for user {user_id}, char {char_id}")
     
     await send_dm(user, r"""```text
                     __                             ___       __  
@@ -271,17 +367,31 @@ Confirm these details? (Y/N)```""")
     
     confirm = await wait_for_user_message(user)
     if confirm.content.strip().upper() == "Y":
-        char = Character(id=user_id, name=name, career="", gender=gender, age=age)
-        creation_sessions[user_id] = char
+        logger.debug(f"Creating new character for user {user_id}, char {char_id}")
+        char = Character(id=char_id, name=name, career="", gender=gender, age=age)
+        if user_id not in creation_sessions:
+            creation_sessions[user_id] = {}
+        creation_sessions[user_id][char_id] = char
+        logger.debug(f"Character created and stored in session: {char.name}")
         await send_dm(user, "```text\n[OK] Personal details saved. Proceeding to Career Selection...\n```")
         await asyncio.sleep(0.3)
-        await select_career(user)
+        await select_career(user, char_id)
     else:
         await send_dm(user, "```text\n[RESET] Let's enter the details again.\n```")
-        await select_personal_details(user)
+        await select_personal_details(user, char_id)
 
-async def select_career(user):
+async def select_career(user, char_id: str):
     user_id = str(user.id)
+    logger.debug(f"Starting career selection for user {user_id}, char {char_id}")
+    
+    if user_id not in creation_sessions or char_id not in creation_sessions[user_id]:
+        logger.error(f"No character found in session for user {user_id}, char {char_id}")
+        await send_dm(user, "```text\n[ERROR] Character creation session lost. Please start over with /createcharacter.\n```")
+        return
+        
+    char = creation_sessions[user_id][char_id]
+    logger.debug(f"Found character in session: {char.name}")
+    
     careers = data_manager.get_playergen()["Careers"]
     career_names = list(careers.keys())
     
@@ -331,10 +441,10 @@ async def select_career(user):
                 sel = await wait_for_user_message(user)
                 ans = sel.content.strip().upper()
                 if ans == "Y":
-                    creation_sessions[user_id].career = cname
+                    creation_sessions[user_id][char_id].career = cname
                     await send_dm(user, """```text\n[OK] Career selected. Proceeding to Attributes...\n```""")
                     await asyncio.sleep(0.3)
-                    await start_attr(user)
+                    await start_attr(user, char_id)
                     return
                 elif ans == "N":
                     await send_dm(user, get_menu())
@@ -344,10 +454,10 @@ async def select_career(user):
             continue
         if choice.isdigit() and 1 <= int(choice) <= len(career_names):
             cname = career_names[int(choice)-1]
-            creation_sessions[user_id].career = cname
+            creation_sessions[user_id][char_id].career = cname
             await send_dm(user, f"""```text\n[OK] Career selected: {cname}. Proceeding to Attributes...\n```""")
             await asyncio.sleep(0.3)
-            await start_attr(user)
+            await start_attr(user, char_id)
             return
         await send_dm(user, "```text\n[ERROR] Invalid input. Enter a number, dN, or pN.\n```")
 
@@ -363,13 +473,13 @@ def format_skill_bar(value):
     spaces = " " * (11 - len(stars))  
     return f"[{stars}{spaces}]"
 
-async def start_attr(user):
+async def start_attr(user, char_id: str):
     user_id = str(user.id)
     careers = data_manager.get_playergen()["Careers"]
-    if user_id not in creation_sessions:
+    if user_id not in creation_sessions or char_id not in creation_sessions[user_id]:
         await send_dm(user, "```text\n[ERROR] No career found – start with /createcharacter.\n```")
         return
-    char = creation_sessions[user_id]
+    char = creation_sessions[user_id][char_id]
     key_attr = careers[char.career]["key_attribute"]
     attr_order = ["Strength", "Agility", "Wits", "Empathy"]
     points_remaining = 6
@@ -427,7 +537,7 @@ async def start_attr(user):
                 confirm = await wait_for_user_message(user)
                 if confirm.content.strip().upper() == "Y":
                     await send_dm(user, "```text\n[OK] Attributes saved. Proceeding to Skills...\n```")
-                    await assign_skills(user_id)
+                    await assign_skills(user_id, char_id)
                     return
                 elif confirm.content.strip().upper() == "N":
                     await send_dm(user, """```text\n[RESET] Let's enter the values again.\n```""")
@@ -507,13 +617,13 @@ async def start_attr(user):
             await send_dm(user, "```text\n[ERROR] Please enter a valid command\n```")
             continue
 
-async def assign_skills(user_id):
+async def assign_skills(user_id, char_id: str):
     user = await bot.fetch_user(int(user_id))
     careers = data_manager.get_playergen()["Careers"]
-    if user_id not in creation_sessions:
+    if user_id not in creation_sessions or char_id not in creation_sessions[user_id]:
         await send_dm(user, "```text\n[ERROR] No career found in session. Please start over with /createcharacter.\n```")
         return
-    char = creation_sessions[user_id]
+    char = creation_sessions[user_id][char_id]
     key_skills = careers[char.career]["key_skills"]
     all_skills = list(data_manager.get_playergen()["Skills"].keys())
     points_remaining = 10
@@ -599,7 +709,7 @@ async def assign_skills(user_id):
         cmd = msg.content.strip().upper()
         if cmd == "B" or cmd == "BACK":
             # Go back to key skills
-            await assign_skills(user_id)
+            await assign_skills(user_id, char_id)
             return
         indices = re.findall(r"\d+", cmd)
         if indices:
@@ -658,7 +768,7 @@ async def assign_skills(user_id):
     confirm = await wait_for_user_message(user)
     if confirm.content.strip().upper() == "Y":
         await send_dm(user, "```text\n[OK] Skills saved. Proceeding to Talent...\n```")
-        await select_talent(user_id)
+        await select_talent(user_id, char_id)
         return
     else:
         await send_dm(user, "```text\n[RESET] Let's reassign skills.\n```")
@@ -666,20 +776,20 @@ async def assign_skills(user_id):
         for skill in key_skills + available_skills:
             skill_attr = skill.lower().replace(" ", "_")
             setattr(char.skills, skill_attr, 0)
-        await assign_skills(user_id)
+        await assign_skills(user_id, char_id)
         return
 
-async def select_talent(user_id):
+async def select_talent(user_id, char_id: str):
     user = await bot.fetch_user(int(user_id))
     playergen = data_manager.get_playergen()
     careers = playergen["Careers"]
     talents = playergen["Talents"]
     
-    if user_id not in creation_sessions:
+    if user_id not in creation_sessions or char_id not in creation_sessions[user_id]:
         await send_dm(user, "```text\n[ERROR] No career found in session. Please start over with /createcharacter.\n```")
         return
         
-    char = creation_sessions[user_id]
+    char = creation_sessions[user_id][char_id]
     career_talents = careers[char.career]["talents"]
     
     menu = ["```text", ">> TALENT SELECTION <<"]
@@ -715,18 +825,18 @@ async def select_talent(user_id):
         selected = career_talents[choice - 1]
         char.talent = selected
         await send_dm(user, f"```text\n[OK] Talent saved. Proceeding to Personal Agenda...\n```")
-        await select_agenda(user_id)
+        await select_agenda(user_id, char_id)
         return
 
-async def select_agenda(user_id):
+async def select_agenda(user_id, char_id: str):
     user = await bot.fetch_user(int(user_id))
     careers = data_manager.get_playergen()["Careers"]
     
-    if user_id not in creation_sessions:
+    if user_id not in creation_sessions or char_id not in creation_sessions[user_id]:
         await send_dm(user, "```text\n[ERROR] No career found in session. Please start over with /createcharacter.\n```")
         return
         
-    char = creation_sessions[user_id]
+    char = creation_sessions[user_id][char_id]
     agendas = careers[char.career]["personal_agendas"]
     
     menu = ["```text", ">> PERSONAL AGENDA <<"]
@@ -752,7 +862,7 @@ async def select_agenda(user_id):
         selected = agendas[choice - 1]
         char.agenda = selected
         await send_dm(user, "[OK] Agenda saved. Proceeding to Gear...")
-        await select_gear(user_id)
+        await select_gear(user_id, char_id)
         return
 
 def handle_dice_roll_item(item_name: str) -> tuple[str, int]:
@@ -768,15 +878,15 @@ def handle_dice_roll_item(item_name: str) -> tuple[str, int]:
         return item_name.strip(), quantity
     return item_name, 1
 
-async def select_gear(user_id):
+async def select_gear(user_id, char_id: str):
     user = await bot.fetch_user(int(user_id))
     careers = data_manager.get_playergen()["Careers"]
     
-    if user_id not in creation_sessions:
+    if user_id not in creation_sessions or char_id not in creation_sessions[user_id]:
         await send_dm(user, "```text\n[ERROR] No career found in session. Please start over with /createcharacter.\n```")
         return
         
-    char = creation_sessions[user_id]
+    char = creation_sessions[user_id][char_id]
     gear_list = careers[char.career]["starting_gear"]
     
     menu = ["```text", ">> GEAR SELECTION <<"]
@@ -858,22 +968,22 @@ Confirm these selections? (Y/N)```""")
             confirm = await wait_for_user_message(user)
             if confirm.content.strip().upper() == "Y":
                 await send_dm(user, "[OK] Gear saved. Proceeding to Signature Item...")
-                await select_signature_item(user_id)
+                await select_signature_item(user_id, char_id)
                 return
             else:
                 await send_dm(user, "[RESET] Let's select gear again.")
                 char.inventory = Inventory()
                 break
 
-async def select_signature_item(user_id):
+async def select_signature_item(user_id, char_id: str):
     user = await bot.fetch_user(int(user_id))
     careers = data_manager.get_playergen()["Careers"]
     
-    if user_id not in creation_sessions:
+    if user_id not in creation_sessions or char_id not in creation_sessions[user_id]:
         await send_dm(user, "```text\n[ERROR] No career found in session. Please start over with /createcharacter.\n```")
         return
         
-    char = creation_sessions[user_id]
+    char = creation_sessions[user_id][char_id]
     items = careers[char.career]["signature_items"]
     
     menu = ["```text", ">> SIGNATURE ITEM <<"]
@@ -900,25 +1010,25 @@ async def select_signature_item(user_id):
         char.signature_item = selected
         await send_dm(user, "[OK] Signature Item saved. Proceeding to Cash...")
         # Immediately apply cash and proceed to final review
-        await apply_starting_cash_and_finalize(user_id)
+        await apply_starting_cash_and_finalize(user_id, char_id)
         return
 
-async def apply_starting_cash_and_finalize(user_id):
+async def apply_starting_cash_and_finalize(user_id, char_id: str):
     user = await bot.fetch_user(int(user_id))
     careers = data_manager.get_playergen()["Careers"]
-    char = creation_sessions[user_id]
+    char = creation_sessions[user_id][char_id]
     formula = careers[char.career]["cash"]
     amt = DiceRoll.roll(formula)
     char.cash = amt
     await send_dm(user, "[OK] Cash assigned. Proceeding to final review...")
-    await finalize_character(user_id, finalstep=True)
+    await finalize_character(user_id, char_id, finalstep=True)
 
-async def finalize_character(user_id, finalstep=False):
+async def finalize_character(user_id, char_id: str, finalstep=False):
     user = await bot.fetch_user(int(user_id))
-    if user_id not in creation_sessions:
+    if user_id not in creation_sessions or char_id not in creation_sessions[user_id]:
         await send_dm(user, "```text\n[ERROR] No character in progress. Please start over with /createcharacter.\n```")
         return
-    char = creation_sessions[user_id]
+    char = creation_sessions[user_id][char_id]
     while True:
         summary = ["```text", ">> CHARACTER SUMMARY <<"]
         summary.append("\nPlease review...")
@@ -937,9 +1047,9 @@ async def finalize_character(user_id, finalstep=False):
         summary.append(f"\n[G] Gear:")
         for item in char.inventory.items:
             if isinstance(item, ConsumableItem):
-                # Use a default plural if form_plural is missing
-                form_plural = getattr(item, 'form_plural', 'units')
+                # Use default values if form/form_plural are not set
                 form = getattr(item, 'form', 'unit')
+                form_plural = getattr(item, 'form_plural', 'units')
                 summary.append(f"  • {item.name} (x{item.quantity} {form if item.quantity == 1 else form_plural})")
             else:
                 summary.append(f"  • {str(item)}")
@@ -954,32 +1064,44 @@ async def finalize_character(user_id, finalstep=False):
         msg = await wait_for_user_message(user)
         choice = msg.content.strip().upper()
         if choice == "1":
-            data_manager.characters[user_id] = char
+            logger.debug(f"Saving character {char.name} for user {user_id}")
+            if user_id not in data_manager.characters:
+                data_manager.characters[user_id] = {}
+            data_manager.characters[user_id][char_id] = char
+            
+            # Set as primary character if it's the user's first character
+            if not data_manager.primary_characters.get(user_id):
+                data_manager.primary_characters[user_id] = char_id
+                logger.debug(f"Set {char.name} as primary character for user {user_id}")
+            
             data_manager.save_characters()
-            del creation_sessions[user_id]
+            logger.debug(f"Characters after save: {data_manager.characters}")
+            logger.debug(f"Primary characters after save: {data_manager.primary_characters}")
+            
+            del creation_sessions[user_id][char_id]
             await send_dm(user, """```text\n[OK] Character creation complete!\nYour character has been saved and is ready for use.\n```""")
-            log_event(f"Character created: {char.name} (User: {user_id})")
+            log_event(f"Character created: {char.name} (User: {user_id}, Char: {char_id})")
             return
         elif choice == "0":
             await send_dm(user, """```text\nAre you sure you want to restart character creation? This will erase all progress. (Y/N)\n```""")
             confirm = await wait_for_user_message(user)
             if confirm.content.strip().upper() == "Y":
-                del creation_sessions[user_id]
+                del creation_sessions[user_id][char_id]
                 await send_dm(user, """```text\n[RESET] Starting character creation over...\n```""")
-                await select_career(user)
+                await select_career(user, char_id)
                 return
             else:
                 continue
         elif finalstep and choice in ["A", "B", "C", "D", "E", "F", "G", "H"]:
             # Call the appropriate edit function for the section, then return to summary
-            await edit_section(user_id, choice)
+            await edit_section(user_id, char_id, choice)
             continue
         else:
             await send_dm(user, "```text\n[ERROR] Please enter a valid option.\n```")
             continue
 
 # Placeholder for section editing logic
-async def edit_section(user_id, section):
+async def edit_section(user_id, char_id, section):
     user = await bot.fetch_user(int(user_id))
     # Implement section-specific editing logic here
     await send_dm(user, f"```text\n[EDIT] Section {section} editing not yet implemented. Returning to summary...\n```")
@@ -988,28 +1110,42 @@ async def edit_section(user_id, section):
 @bot.tree.command(name="createcharacter", description="Begin character creation.")
 async def cmd_create(interaction: discord.Interaction):
     user = interaction.user
-    chars = data_manager.get_characters()
-    if str(user.id) in chars:
-        await interaction.response.send_message(
-            "[ERROR] You already have a character. Use /deletecharacter first.",
-            ephemeral=True
-        )
-        return
+    user_id = str(user.id)
+    user_chars = data_manager.get_user_characters(user_id)
+    
+    # Generate a unique character ID
+    char_id = f"{user.id}_{len(user_chars) + 1}"
+    logger.debug(f"Starting character creation for user {user_id}, char {char_id}")
+    
+    # Initialize the user's session if needed
+    if user_id not in creation_sessions:
+        creation_sessions[user_id] = {}
+    
+    # Clear any existing session for this character
+    if char_id in creation_sessions[user_id]:
+        del creation_sessions[user_id][char_id]
+    
     await interaction.response.send_message(
         "[OK] Check your DMs to begin character creation.",
         ephemeral=True
     )
-    await select_personal_details(user)
+    await select_personal_details(user, char_id)
 
 @bot.tree.command(name="sheet", description="View your character sheet.")
 async def cmd_sheet(interaction: discord.Interaction):
     user = interaction.user
-    chars = data_manager.get_characters()
-    if str(user.id) not in chars:
+    user_id = str(user.id)
+    logger.debug(f"Sheet command called by user {user_id}")
+    logger.debug(f"All characters: {data_manager.characters}")
+    logger.debug(f"Primary characters: {data_manager.primary_characters}")
+    
+    char = data_manager.get_primary_character(user_id)
+    logger.debug(f"Found primary character: {char}")
+    
+    if not char:
         await interaction.response.send_message("```text\n[ERROR] No character sheet found.\n```", ephemeral=True)
         return
         
-    char = chars[str(user.id)]
     sheet = ["```text", ">> CHARACTER SHEET <<"]
     sheet.append(f"\nName: {char.name}")
     sheet.append(f"Career: {char.career}")
@@ -1027,7 +1163,10 @@ async def cmd_sheet(interaction: discord.Interaction):
     sheet.append("\nGear:")
     for item in char.inventory.items:
         if isinstance(item, ConsumableItem):
-            sheet.append(f"  • {item.name} (x{item.quantity} {item.form if item.quantity == 1 else item.form_plural})")
+            # Use default values if form/form_plural are not set
+            form = getattr(item, 'form', 'unit')
+            form_plural = getattr(item, 'form_plural', 'units')
+            sheet.append(f"  • {item.name} (x{item.quantity} {form if item.quantity == 1 else form_plural})")
         else:
             sheet.append(f"  • {str(item)}")
     
@@ -1040,18 +1179,25 @@ async def cmd_sheet(interaction: discord.Interaction):
 @bot.tree.command(name="deletecharacter", description="Delete your character. Use --force to skip confirmation.")
 async def cmd_delete(interaction: discord.Interaction, *, options: str = ""):
     user = interaction.user
-    chars = data_manager.get_characters()
+    user_id = str(user.id)
+    chars = data_manager.get_user_characters(user_id)
     force = "--force" in options.split()
     
-    if str(user.id) not in chars:
+    if not chars:
         await interaction.response.send_message("[ERROR] No character.", ephemeral=True)
         return
         
     if force:
-        del chars[str(user.id)]
+        # Create a list of character IDs to delete
+        char_ids = list(chars.keys())
+        for char_id in char_ids:
+            del data_manager.characters[user_id][char_id]
+        # Also remove from primary characters if needed
+        if user_id in data_manager.primary_characters:
+            del data_manager.primary_characters[user_id]
         data_manager.save_characters()
-        await interaction.response.send_message("[OK] Character deleted.", ephemeral=True)
-        log_event(f"Character deleted: {str(user.id)} (User: {user.id})")
+        await interaction.response.send_message("[OK] All characters deleted.", ephemeral=True)
+        log_event(f"All characters deleted: {user_id} (User: {user.id})")
         return
         
     class ConfirmView(discord.ui.View):
@@ -1075,7 +1221,7 @@ async def cmd_delete(interaction: discord.Interaction, *, options: str = ""):
 
     view = ConfirmView()
     await interaction.response.send_message(
-        "⚠️ Are you sure you want to delete your character? This cannot be undone.", 
+        "⚠️ Are you sure you want to delete all your characters? This cannot be undone.", 
         view=view,
         ephemeral=True
     )
@@ -1083,13 +1229,19 @@ async def cmd_delete(interaction: discord.Interaction, *, options: str = ""):
     await view.wait()
     
     if view.value:
-        del chars[str(user.id)]
+        # Create a list of character IDs to delete
+        char_ids = list(chars.keys())
+        for char_id in char_ids:
+            del data_manager.characters[user_id][char_id]
+        # Also remove from primary characters if needed
+        if user_id in data_manager.primary_characters:
+            del data_manager.primary_characters[user_id]
         data_manager.save_characters()
         await interaction.edit_original_response(
-            content="[OK] Character deleted.",
+            content="[OK] All characters deleted.",
             view=None
         )
-        log_event(f"Character deleted: {str(user.id)} (User: {user.id})")
+        log_event(f"All characters deleted: {user_id} (User: {user.id})")
     else:
         await interaction.edit_original_response(
             content="[CANCEL] Character deletion cancelled.",
@@ -1111,11 +1263,242 @@ async def cmd_help(interaction: discord.Interaction):
 >> AVAILABLE COMMANDS <<
 /createcharacter   - Begin character creation
 /sheet            - View your character sheet
-/deletecharacter  - Delete your character (use --force to skip confirmation)
+/deletecharacter  - Delete all your characters (use --force to skip confirmation)
 /reloaddata       - [Admin] Reload game data files
 /charactercommands - Show this help message
 ```"""
     await interaction.response.send_message(text, ephemeral=True)
+
+@bot.tree.command(name="characters", description="Manage your characters - view details, set primary, or delete characters.")
+async def cmd_characters(interaction: discord.Interaction):
+    user = interaction.user
+    user_id = str(user.id)
+    user_chars = data_manager.get_user_characters(user_id)
+    
+    if not user_chars:
+        await interaction.response.send_message("```text\n[ERROR] No characters found.\n```", ephemeral=True)
+        return
+    
+    primary_id = data_manager.primary_characters.get(user_id)
+    
+    # Create a view with buttons for each character
+    class CharacterView(discord.ui.View):
+        def __init__(self):
+            super().__init__(timeout=60)
+            
+            # Add a button for each character
+            for char_id, char in user_chars.items():
+                is_primary = char_id == primary_id
+                label = f"★ {char.name}" if is_primary else char.name
+                button = discord.ui.Button(
+                    label=label,
+                    custom_id=char_id,
+                    style=discord.ButtonStyle.primary if is_primary else discord.ButtonStyle.secondary
+                )
+                button.callback = self.button_callback
+                self.add_item(button)
+        
+        async def button_callback(self, interaction: discord.Interaction):
+            try:
+                char_id = interaction.data["custom_id"]
+                char = user_chars[char_id]
+                
+                # Create a new view for character actions
+                class CharacterActionView(discord.ui.View):
+                    def __init__(self):
+                        super().__init__(timeout=60)
+                        
+                        # Add Set Primary button if not already primary
+                        if char_id != primary_id:
+                            set_primary = discord.ui.Button(
+                                label="Set as Primary",
+                                style=discord.ButtonStyle.success,
+                                custom_id="set_primary"
+                            )
+                            set_primary.callback = self.set_primary_callback
+                            self.add_item(set_primary)
+                        
+                        # Add Delete button
+                        delete = discord.ui.Button(
+                            label="Delete Character",
+                            style=discord.ButtonStyle.danger,
+                            custom_id="delete"
+                        )
+                        delete.callback = self.delete_callback
+                        self.add_item(delete)
+                        
+                        # Add View Sheet button
+                        view_sheet = discord.ui.Button(
+                            label="View Sheet",
+                            style=discord.ButtonStyle.secondary,
+                            custom_id="view_sheet"
+                        )
+                        view_sheet.callback = self.view_sheet_callback
+                        self.add_item(view_sheet)
+                        
+                        # Add Back button
+                        back = discord.ui.Button(
+                            label="← Back to List",
+                            style=discord.ButtonStyle.secondary,
+                            custom_id="back"
+                        )
+                        back.callback = self.back_callback
+                        self.add_item(back)
+                        
+                        # Add Close button
+                        close = discord.ui.Button(
+                            label="Close",
+                            style=discord.ButtonStyle.secondary,
+                            custom_id="close"
+                        )
+                        close.callback = self.close_callback
+                        self.add_item(close)
+                    
+                    async def set_primary_callback(self, interaction: discord.Interaction):
+                        if data_manager.set_primary_character(user_id, char_id):
+                            await interaction.response.send_message(
+                                f"```text\n[OK] {char.name} is now your primary character.\n```",
+                                ephemeral=True
+                            )
+                        else:
+                            await interaction.response.send_message(
+                                "```text\n[ERROR] Failed to set primary character.\n```",
+                                ephemeral=True
+                            )
+                    
+                    async def delete_callback(self, interaction: discord.Interaction):
+                        # Create confirmation view
+                        class ConfirmDeleteView(discord.ui.View):
+                            def __init__(self):
+                                super().__init__(timeout=30)
+                            
+                            @discord.ui.button(label="Confirm Delete", style=discord.ButtonStyle.danger)
+                            async def confirm(self, interaction: discord.Interaction, button: discord.ui.Button):
+                                try:
+                                    del data_manager.characters[user_id][char_id]
+                                    if primary_id == char_id:
+                                        del data_manager.primary_characters[user_id]
+                                    data_manager.save_characters()
+                                    await interaction.response.send_message(
+                                        f"```text\n[OK] {char.name} has been deleted.\n```",
+                                        ephemeral=True
+                                    )
+                                except Exception as e:
+                                    logger.error(f"Error deleting character: {e}")
+                                    await interaction.response.send_message(
+                                        "```text\n[ERROR] Failed to delete character.\n```",
+                                        ephemeral=True
+                                    )
+                            
+                            @discord.ui.button(label="Cancel", style=discord.ButtonStyle.secondary)
+                            async def cancel(self, interaction: discord.Interaction, button: discord.ui.Button):
+                                await interaction.response.send_message(
+                                    "```text\n[CANCEL] Character deletion cancelled.\n```",
+                                    ephemeral=True
+                                )
+                        
+                        await interaction.response.send_message(
+                            f"```text\n⚠️ Are you sure you want to delete {char.name}? This cannot be undone.\n```",
+                            view=ConfirmDeleteView(),
+                            ephemeral=True
+                        )
+                    
+                    async def view_sheet_callback(self, interaction: discord.Interaction):
+                        sheet = ["```text", ">> CHARACTER SHEET <<"]
+                        sheet.append(f"\nName: {char.name}")
+                        sheet.append(f"Career: {char.career}")
+                        sheet.append("\nAttributes:")
+                        for attr in ["Strength", "Agility", "Wits", "Empathy"]:
+                            value = getattr(char.attributes, attr.lower())
+                            sheet.append(f"  {attr}: {value} {format_attribute_bar(value)}")
+                        sheet.append("\nSkills:")
+                        for skill_name, value in char.skills.__dict__.items():
+                            if value > 0:
+                                name = skill_name.replace('_', ' ').title()
+                                sheet.append(f"  {name}: {value} {format_skill_bar(value)}")
+                        sheet.append(f"\nTalent: {char.talent}")
+                        sheet.append(f"Personal Agenda: {char.agenda}")
+                        sheet.append("\nGear:")
+                        for item in char.inventory.items:
+                            if isinstance(item, ConsumableItem):
+                                form = getattr(item, 'form', 'unit')
+                                form_plural = getattr(item, 'form_plural', 'units')
+                                sheet.append(f"  • {item.name} (x{item.quantity} {form if item.quantity == 1 else form_plural})")
+                            else:
+                                sheet.append(f"  • {str(item)}")
+                        sheet.append(f"\nSignature Item: {char.signature_item}")
+                        sheet.append(f"Cash: ${char.cash}")
+                        sheet.append("```")
+                        
+                        await interaction.response.send_message('\n'.join(sheet), ephemeral=True)
+                    
+                    async def back_callback(self, interaction: discord.Interaction):
+                        # Recreate the character list view
+                        char_list = ["```text", ">> YOUR CHARACTERS <<", ""]
+                        for char_id, char in user_chars.items():
+                            is_primary = char_id == primary_id
+                            char_list.append(f"{'★ ' if is_primary else ''}{char.name} ({char.career})")
+                        char_list.append("\nClick a character to manage them.")
+                        char_list.append("```")
+                        
+                        await interaction.response.edit_message(
+                            content='\n'.join(char_list),
+                            view=CharacterView()
+                        )
+                    
+                    async def close_callback(self, interaction: discord.Interaction):
+                        try:
+                            await interaction.response.edit_message(
+                                content="```text\n[CLOSED] Character management interface closed.\n```",
+                                view=None
+                            )
+                        except Exception as e:
+                            logger.error(f"Error closing character interface: {e}")
+                            await interaction.response.send_message(
+                                "```text\n[ERROR] Failed to close interface.\n```",
+                                ephemeral=True
+                            )
+                
+                # Create character summary
+                summary = ["```text", f">> CHARACTER: {char.name} <<"]
+                summary.append(f"Career: {char.career}")
+                summary.append(f"Gender: {char.gender}")
+                summary.append(f"Age: {char.age}")
+                summary.append("\nKey Attributes:")
+                for attr in ["Strength", "Agility", "Wits", "Empathy"]:
+                    value = getattr(char.attributes, attr.lower())
+                    summary.append(f"  {attr}: {value}")
+                summary.append(f"\nTalent: {char.talent}")
+                summary.append(f"Cash: ${char.cash}")
+                summary.append("\nSelect an action:")
+                summary.append("```")
+                
+                await interaction.response.send_message(
+                    '\n'.join(summary),
+                    view=CharacterActionView(),
+                    ephemeral=True
+                )
+                
+            except Exception as e:
+                logger.error(f"Error in button callback: {e}")
+                await interaction.response.send_message(
+                    "```text\n[ERROR] An error occurred while managing character.\n```",
+                    ephemeral=True
+                )
+    
+    # Show the character list
+    char_list = ["```text", ">> YOUR CHARACTERS <<", ""]
+    for char_id, char in user_chars.items():
+        is_primary = char_id == primary_id
+        char_list.append(f"{'★ ' if is_primary else ''}{char.name} ({char.career})")
+    char_list.append("\nClick a character to manage them.")
+    char_list.append("```")
+    
+    await interaction.response.send_message(
+        "\n".join(char_list),
+        view=CharacterView(),
+        ephemeral=True
+    )
 
 # Start the bot
 bot.run(os.getenv('DISCORD_TOKEN'))
