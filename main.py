@@ -917,6 +917,65 @@ def handle_dice_roll_item(item_name: str) -> tuple[str, int]:
         return item_name.strip(), quantity
     return item_name, 1
 
+def get_paired_gear(gear_list: list) -> list[tuple[str, str]]:
+    """Identify pairs of mutually exclusive gear items.
+    Each career has 8 items organized into 4 pairs."""
+    pairs = []
+    for i in range(0, len(gear_list), 2):
+        if i + 1 < len(gear_list):
+            pairs.append((gear_list[i], gear_list[i + 1]))
+    return pairs
+
+def get_article_for_item(item_name: str) -> str:
+    """Add the appropriate article to an item name based on its characteristics."""
+    # Items that should not have any article
+    no_article_prefixes = [
+        "1d6", "2d6", "3d6", "4d6", "5d6", "6d6",  # Dice rolls
+        "1d3", "2d3", "3d3", "4d3", "5d3", "6d3",
+        "1d4", "2d4", "3d4", "4d4", "5d4", "6d4",
+        "1d8", "2d8", "3d8", "4d8", "5d8", "6d8",
+        "1d10", "2d10", "3d10", "4d10", "5d10", "6d10",
+        "1d12", "2d12", "3d12", "4d12", "5d12", "6d12",
+        "1d20", "2d20", "3d20", "4d20", "5d20", "6d20",
+        "1d100", "2d100", "3d100", "4d100", "5d100", "6d100",
+        "1 ", "2 ", "3 ", "4 ", "5 ", "6 ",  # Simple quantities
+        "1x", "2x", "3x", "4x", "5x", "6x"
+    ]
+    
+    # Check if item starts with any of the no-article prefixes
+    for prefix in no_article_prefixes:
+        if item_name.startswith(prefix):
+            return item_name
+    
+    # Items that should use "the"
+    definite_articles = [
+        # Weapons and military equipment
+        "M4A3", "M41A", "M56A2", "M314", "M3", "M72", ".357", "Armat",
+        "Rexim", "Watatsumi", "B9", "G2", "Model", "Pump-Action",
+        # Company/Manufacturer prefixes
+        "IRC", "PR-PUT", "Seegson", "Samani", "Daihotai",
+        # Personal equipment
+        "Personal", "Hand", "Maintenance", "Hi-beam",
+        # Plural items that take "the"
+        "Binoculars", "Cards", "Drugs", "Pills", "Tools", "Grenades",
+        # Other specific items
+        "Surgical", "Digital", "Neuro", "Eco", "Recreational"
+    ]
+    
+    # Check if item starts with any of the definite article prefixes
+    for prefix in definite_articles:
+        if item_name.startswith(prefix):
+            return f"the {item_name}"
+    
+    # Items that should use "an"
+    an_prefixes = ["EVA", "IRC", "IFF", "Eco", "Electronic"]
+    for prefix in an_prefixes:
+        if item_name.startswith(prefix):
+            return f"an {item_name}"
+    
+    # Default to "a" for other items
+    return f"a {item_name}"
+
 async def select_gear(user_id, char_id: str):
     user = await bot.fetch_user(int(user_id))
     careers = data_manager.get_playergen()["Careers"]
@@ -927,6 +986,7 @@ async def select_gear(user_id, char_id: str):
         
     char = creation_sessions[user_id][char_id]
     gear_list = careers[char.career]["starting_gear"]
+    gear_pairs = get_paired_gear(gear_list)
     
     menu = ["```text", ">> GEAR SELECTION <<"]
     menu.append(f"Select your first piece of gear for your {char.career}.")
@@ -959,20 +1019,22 @@ async def select_gear(user_id, char_id: str):
         else:
             char.inventory.add_item(Item(name=item_name))
         
+        # Find which pair the first item belongs to
+        first_pair_index = (choice - 1) // 2
+        first_pair = gear_pairs[first_pair_index]
+        
         remaining_gear = []
-        for item in gear_list:
+        for i, item in enumerate(gear_list):
             if item == first_item:
                 continue
-            if any(cat in item.lower() for cat in ["weapon", "gun", "rifle", "pistol"]) and \
-               any(cat in first_item.lower() for cat in ["weapon", "gun", "rifle", "pistol"]):
+            # Skip the paired item
+            if item in first_pair:
                 continue
             remaining_gear.append(item)
         
         menu = ["```text", ">> GEAR SELECTION <<"]
-        menu.append(f"Select your second piece of gear for your {char.career}.")
-        menu.append(f"\nNOTE: You have selected {first_item}.")
-        if any(cat in first_item.lower() for cat in ["weapon", "gun", "rifle", "pistol"]):
-            menu.append("You cannot select another weapon.")
+        menu.append(f"You have selected {get_article_for_item(first_item)} as your first item. Please select the second piece of gear for your {char.career}.")
+        menu.append(f"\nNOTE: Because you have selected {get_article_for_item(first_item)}, you are precluded via game rules from also selecting {get_article_for_item(first_pair[0] if first_item == first_pair[1] else first_pair[1])}, which has been removed from the list of remaining selectable items below.")
         menu.append("\nAvailable gear:")
         for i, item in enumerate(remaining_gear, 1):
             menu.append(f"[{i}] {item}")
