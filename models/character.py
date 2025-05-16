@@ -1,7 +1,9 @@
 from typing import Dict, List, Optional
 from dataclasses import dataclass, field
-from .items import Inventory, Item, ConsumableItem
+from .items import Inventory, Item, ConsumableItem, ClothingItem, ArmorItem, SuitItem, AccessoryItem
 from .dice import DiceRoll
+from .weapon_item import WeaponItem
+from .wearables import WearableLoadout
 
 @dataclass
 class Attributes:
@@ -27,7 +29,7 @@ class Skills:
 
 @dataclass
 class Character:
-    """Represents a player character in the game"""
+    """Represents a player character in the game, with inventory, loadout, and weapons separated."""
     id: str
     name: str
     career: str
@@ -40,6 +42,8 @@ class Character:
     inventory: Inventory = field(default_factory=Inventory)
     signature_item: str = ""
     cash: int = 0
+    loadout: Optional[WearableLoadout] = None  # Equipped wearables
+    weapons: List[WeaponItem] = field(default_factory=list)  # Equipped weapons
     
     @classmethod
     def create_new(cls, char_id: str, name: str) -> 'Character':
@@ -52,7 +56,9 @@ class Character:
             age=0,
             attributes=Attributes(),
             skills=Skills(),
-            inventory=Inventory()
+            inventory=Inventory(),
+            loadout=WearableLoadout(),
+            weapons=[]
         )
     
     @classmethod
@@ -67,7 +73,9 @@ class Character:
             age=data.get('Age', 0),
             attributes=Attributes(),
             skills=Skills(),
-            inventory=Inventory()
+            inventory=Inventory(),
+            loadout=WearableLoadout(),
+            weapons=[]
         )
         
         # Update attributes if provided
@@ -122,10 +130,31 @@ class Character:
                     for name in item:
                         char.inventory.add_item(Item(name=name))
                         
+        # Load loadout and weapons if present
+        if 'Loadout' in data:
+            # TODO: implement WearableLoadout.from_dict if needed
+            pass
+        if 'Weapons' in data:
+            # TODO: implement weapon loading if needed
+            pass
+            
         return char
     
     def to_json(self) -> Dict:
-        """Convert character to JSON format"""
+        """Convert character to JSON format, including inventory, loadout, and weapons."""
+        # Helper to serialize WearableLoadout
+        def serialize_loadout(loadout):
+            if not loadout:
+                return None
+            return {
+                'clothing': vars(loadout.clothing) if loadout.clothing else None,
+                'armor': [vars(a) for a in loadout.armor],
+                'suit': vars(loadout.suit) if loadout.suit else None,
+                'accessories': [vars(a) for a in loadout.accessories]
+            }
+        # Helper to serialize weapons
+        def serialize_weapons(weapons):
+            return [vars(w) for w in weapons]
         return {
             'Name': self.name,
             'Career': self.career,
@@ -142,7 +171,9 @@ class Character:
             },
             'Talent': self.talent,
             'Agenda': self.agenda,
-            'Gear': [str(item) for item in self.inventory.items],
+            'Inventory': [vars(item) for item in self.inventory.items],
             'Signature Item': self.signature_item,
-            'Cash': self.cash
+            'Cash': self.cash,
+            'Loadout': serialize_loadout(self.loadout),
+            'Weapons': serialize_weapons(self.weapons)
         }

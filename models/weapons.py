@@ -1,4 +1,4 @@
-from weapon_item import WeaponItem
+from .weapon_item import WeaponItem
 
 # === PISTOLS ===
 m4a3_service_pistol = WeaponItem(
@@ -29,7 +29,7 @@ magnum_357_revolver = WeaponItem(
 
 rexim_rxf_m5_eva_pistol = WeaponItem(
     name="Rexim RXF-M5 EVA Pistol",
-    lore="A miniaturized and weaponized version of a Weyland-Yutani laser welder in use from the 2100-2120s. This tool was originally improvised as a weapon by the J’Har rebels during the 2106 uprising on Torin Prime. Always one to find profit in anything, Weyland-Yutani studied the modifications after the war and made them the standard self-defense armament on their commercial fleet.",
+    lore="A miniaturized and weaponized version of a Weyland-Yutani laser welder in use from the 2100-2120s. This tool was originally improvised as a weapon by the J'Har rebels during the 2106 uprising on Torin Prime. Always one to find profit in anything, Weyland-Yutani studied the modifications after the war and made them the standard self-defense armament on their commercial fleet.",
     bonus=1,
     damage=1,
     range="Medium",
@@ -100,7 +100,7 @@ weyland_es4_electrostatic_pistol = WeaponItem(
 
 norcomm_qsz203_semi_automatic_pistol = WeaponItem(
     name="Norcomm QSZ-203 Semi-Automatic Pistol",
-    lore="The standard issue sidearm of the UPP since 2164, the QSZ-203 is a rugged and reliable short recoil-operated pistol. Known for its durability and armor-piercing rounds, it serves as a companion to the AK-4047 Pulse Rifle and is a hallmark of Norcomm’s robust military production.",
+    lore="The standard issue sidearm of the UPP since 2164, the QSZ-203 is a rugged and reliable short recoil-operated pistol. Known for its durability and armor-piercing rounds, it serves as a companion to the AK-4047 Pulse Rifle and is a hallmark of Norcomm's robust military production.",
     bonus=1,
     damage=1,
     range="Medium",
@@ -164,9 +164,8 @@ gorham_44_magnum_pistol = WeaponItem(
     weapon_class="pistol",
     damage_type="ballistic",
     armor_effect="armor_piercing",
-    user_condition_penalty="−1 RANGED COMBAT if Strength < 3"
+    user_condition_penalty="-1 RANGED COMBAT if Strength < 3"
 )
-
 
 upp_mp_4043_grach_special = WeaponItem(
     name="MP-4043 Grach Special",
@@ -180,7 +179,6 @@ upp_mp_4043_grach_special = WeaponItem(
     damage_type="ballistic",
     armor_effect="armor_piercing"
 )
-
 
 # === RIFLES ===
 
@@ -216,7 +214,7 @@ ak4047_pulse_assault_rifle = WeaponItem(
 
 armat_m42a_scope_rifle = WeaponItem(
     name="Armat M42A Scope Rifle",
-    lore="Equipped with a folding bipod, muzzle flash suppressor, and adjustable stock, the M42A is the USCMC’s semi-automatic sniper rifle of choice. Ideal for eliminating targets spotted before they become a threat.",
+    lore="Equipped with a folding bipod, muzzle flash suppressor, and adjustable stock, the M42A is the USCMC's semi-automatic sniper rifle of choice. Ideal for eliminating targets spotted before they become a threat.",
     bonus=2,
     damage=2,
     range="Extreme",
@@ -315,7 +313,7 @@ norcomm_ak104s_pulse_action_suit_gun = WeaponItem(
     full_auto=True,
     armor_effect="armor_piercing",
     integrated_in="CCC5 Combat Compression Suit",
-    vulnerable_component="Ammo pack (–2 to hit; if destroyed, triggers Blast Power 9 explosion and destroys suit)"
+    vulnerable_component="Ammo pack (-2 to hit; if destroyed, triggers Blast Power 9 explosion and destroys suit)"
 )
 
 rmc_f903we_automatic_assault_rifle = WeaponItem(
@@ -374,7 +372,6 @@ weyland_es7_supernova = WeaponItem(
     inflicts_condition="stunned"
 )
 
-
 weyland_storm_rifle = WeaponItem(
     name="Weyland Storm Rifle",
     lore="Originally designed as a high-end showcase weapon, the Weyland Storm Rifle featured cutting-edge targeting systems and exceptional range. Though never intended for mass deployment, a clerical error led to widespread distribution during colonial peacekeeping efforts. Its legacy lives on in the design of more modern rifles.",
@@ -410,7 +407,7 @@ armat_u1_grenade_launcher = WeaponItem(
 
 armat_m41ae2_heavy_pulse_rifle = WeaponItem(
     name="Armat M41AE2 Heavy Pulse Rifle",
-    lore="A Squad Automatic Weapon modification of the M41A Pulse Rifle, the M41AE2 features a longer barrel in place of the U1 grenade launcher. Designed for suppressive fire and superior battlefield control, it is the USCMC’s go-to support rifle.",
+    lore="A Squad Automatic Weapon modification of the M41A Pulse Rifle, the M41AE2 features a longer barrel in place of the U1 grenade launcher. Designed for suppressive fire and superior battlefield control, it is the USCMC's go-to support rifle.",
     bonus=1,
     damage=3,
     range="Extreme",
@@ -815,7 +812,7 @@ mechanical_cutting_torch = WeaponItem(
 
 unarmed_attack = WeaponItem(
     name="Unarmed Attack",
-    lore="Nothing fancy—just fists, elbows, knees, or any part of the body that works in a desperate situation. Fighting barehanded is risky, especially against armed or armored foes, but sometimes it’s all you’ve got.",
+    lore="Nothing fancy—just fists, elbows, knees, or any part of the body that works in a desperate situation. Fighting barehanded is risky, especially against armed or armored foes, but sometimes it's all you've got.",
     bonus=0,
     damage=1,
     range="Engaged",
@@ -849,4 +846,65 @@ knife = WeaponItem(
     weapon_class="melee",
     damage_type="piercing"
 )
+
+all_weapon_items = [
+    m4a3_service_pistol,
+    magnum_357_revolver,
+    rexim_rxf_m5_eva_pistol,
+    watatsumi_dv303_bolt_gun,
+    bionational_tx9_chemical_air_pistol,
+    vp_70ma6_semi_automatic_pistol,
+    weyland_es4_electrostatic_pistol,
+    norcomm_qsz203_semi_automatic_pistol,
+    m72_starshell_flare_pistol,
+    rexim_rxf_m5a3_eva_pistol,
+    hyperdyne_357_frontier_revolver,
+    gorham_44_magnum_pistol,
+    upp_mp_4043_grach_special,
+    armat_m41a_pulse_rifle,
+    ak4047_pulse_assault_rifle,
+    armat_m42a_scope_rifle,
+    armat_model_37a2_shotgun,
+    armat_xm99a_phased_plasma_rifle,
+    spacesub_asso400_harpoon_gun,
+    armat_p9_sharp_rifle,
+    norcomm_ak4047_pulse_assault_rifle,
+    norcomm_ak104s_pulse_action_suit_gun,
+    rmc_f903we_automatic_assault_rifle,
+    weyland_yutani_nsg23_assault_rifle,
+    weyland_yutani_id23_underbarrel_incinerator_unit,
+    weyland_es7_supernova,
+    weyland_storm_rifle,
+    armat_u1_grenade_launcher,
+    armat_m41ae2_heavy_pulse_rifle,
+    m56a2_smart_gun,
+    m240_incinerator_unit,
+    ua_571c_sentry_gun,
+    armat_u4a2_repeating_grenade_launcher,
+    m5a3_rpg_launcher,
+    norcomm_rpg122,
+    weyland_72a_lew,
+    m78_pig,
+    ua_102_20_phalanx,
+    rexim_rxf_m4_eva_mining_laser,
+    weyland_flammenmacher_3,
+    g2_electroshock_grenade,
+    hedp_grenade_m40,
+    m72a1_starshell_flare,
+    m230_baton_round,
+    m108_buckshot_canister,
+    u4_qtc_firebomb_ammunition,
+    armat_type_4_assault_breaching_charge,
+    m20_claymore_mine,
+    m111_anti_vehicle_mine,
+    cn20_nerve_agent_canister,
+    qtc_explosive_accelerant,
+    kip_baton_round,
+    wildcatter_b9_blast_mining_charge,
+    stun_baton,
+    mechanical_cutting_torch,
+    unarmed_attack,
+    blunt_instrument,
+    knife
+]
 
