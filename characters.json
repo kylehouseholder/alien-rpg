@@ -30,7 +30,28 @@
         "Agenda": "You are a decorated hero, you need to defend your reputation. At all costs.",
         "Inventory": [
           {
-            "name": "M41A Pulse Rifle",
+            "name": {
+              "name": {
+                "name": {
+                  "name": "M41A Pulse Rifle",
+                  "description": "",
+                  "quantity": 1,
+                  "stackable": true,
+                  "condition": 1,
+                  "price": 0
+                },
+                "description": "",
+                "quantity": 1,
+                "stackable": true,
+                "condition": 1,
+                "price": 0
+              },
+              "description": "",
+              "quantity": 1,
+              "stackable": true,
+              "condition": 1,
+              "price": 0
+            },
             "description": "",
             "quantity": 1,
             "stackable": true,
@@ -38,7 +59,28 @@
             "price": 0
           },
           {
-            "name": "M314 Motion Tracker",
+            "name": {
+              "name": {
+                "name": {
+                  "name": "M314 Motion Tracker",
+                  "description": "",
+                  "quantity": 1,
+                  "stackable": true,
+                  "condition": 1,
+                  "price": 0
+                },
+                "description": "",
+                "quantity": 1,
+                "stackable": true,
+                "condition": 1,
+                "price": 0
+              },
+              "description": "",
+              "quantity": 1,
+              "stackable": true,
+              "condition": 1,
+              "price": 0
+            },
             "description": "",
             "quantity": 1,
             "stackable": true,
@@ -80,7 +122,28 @@
         "Agenda": "You are a decorated hero, you need to defend your reputation. At all costs.",
         "Inventory": [
           {
-            "name": "M41A Pulse Rifle",
+            "name": {
+              "name": {
+                "name": {
+                  "name": "M41A Pulse Rifle",
+                  "description": "",
+                  "quantity": 1,
+                  "stackable": true,
+                  "condition": 1,
+                  "price": 0
+                },
+                "description": "",
+                "quantity": 1,
+                "stackable": true,
+                "condition": 1,
+                "price": 0
+              },
+              "description": "",
+              "quantity": 1,
+              "stackable": true,
+              "condition": 1,
+              "price": 0
+            },
             "description": "",
             "quantity": 1,
             "stackable": true,
@@ -88,7 +151,28 @@
             "price": 0
           },
           {
-            "name": "2 G2 Electroshock Grenades",
+            "name": {
+              "name": {
+                "name": {
+                  "name": "2 G2 Electroshock Grenades",
+                  "description": "",
+                  "quantity": 1,
+                  "stackable": true,
+                  "condition": 1,
+                  "price": 0
+                },
+                "description": "",
+                "quantity": 1,
+                "stackable": true,
+                "condition": 1,
+                "price": 0
+              },
+              "description": "",
+              "quantity": 1,
+              "stackable": true,
+              "condition": 1,
+              "price": 0
+            },
             "description": "",
             "quantity": 1,
             "stackable": true,
@@ -135,7 +219,28 @@
             "name": {
               "name": {
                 "name": {
-                  "name": "IRC MK.35 Pressure Suit",
+                  "name": {
+                    "name": {
+                      "name": {
+                        "name": "IRC MK.35 Pressure Suit",
+                        "description": "",
+                        "quantity": 1,
+                        "stackable": true,
+                        "condition": 1,
+                        "price": 0
+                      },
+                      "description": "",
+                      "quantity": 1,
+                      "stackable": true,
+                      "condition": 1,
+                      "price": 0
+                    },
+                    "description": "",
+                    "quantity": 1,
+                    "stackable": true,
+                    "condition": 1,
+                    "price": 0
+                  },
                   "description": "",
                   "quantity": 1,
                   "stackable": true,
@@ -164,7 +269,28 @@
             "name": {
               "name": {
                 "name": {
-                  "name": "M41A Pulse Rifle",
+                  "name": {
+                    "name": {
+                      "name": {
+                        "name": "M41A Pulse Rifle",
+                        "description": "",
+                        "quantity": 1,
+                        "stackable": true,
+                        "condition": 1,
+                        "price": 0
+                      },
+                      "description": "",
+                      "quantity": 1,
+                      "stackable": true,
+                      "condition": 1,
+                      "price": 0
+                    },
+                    "description": "",
+                    "quantity": 1,
+                    "stackable": true,
+                    "condition": 1,
+                    "price": 0
+                  },
                   "description": "",
                   "quantity": 1,
                   "stackable": true,
@@ -229,7 +355,28 @@
             "name": {
               "name": {
                 "name": {
-                  "name": "IRC MK.50 Compression Suit",
+                  "name": {
+                    "name": {
+                      "name": {
+                        "name": "IRC MK.50 Compression Suit",
+                        "description": "",
+                        "quantity": 1,
+                        "stackable": true,
+                        "condition": 1,
+                        "price": 0
+                      },
+                      "description": "",
+                      "quantity": 1,
+                      "stackable": true,
+                      "condition": 1,
+                      "price": 0
+                    },
+                    "description": "",
+                    "quantity": 1,
+                    "stackable": true,
+                    "condition": 1,
+                    "price": 0
+                  },
                   "description": "",
                   "quantity": 1,
                   "stackable": true,
@@ -294,7 +441,28 @@
             "name": {
               "name": {
                 "name": {
-                  "name": "M314 Motion Tracker",
+                  "name": {
+                    "name": {
+                      "name": {
+                        "name": "M314 Motion Tracker",
+                        "description": "",
+                        "quantity": 1,
+                        "stackable": true,
+                        "condition": 1,
+                        "price": 0
+                      },
+                      "description": "",
+                      "quantity": 1,
+                      "stackable": true,
+                      "condition": 1,
+                      "price": 0
+                    },
+                    "description": "",
+                    "quantity": 1,
+                    "stackable": true,
+                    "condition": 1,
+                    "price": 0
+                  },
                   "description": "",
                   "quantity": 1,
                   "stackable": true,
@@ -323,7 +491,28 @@
             "name": {
               "name": {
                 "name": {
-                  "name": "Digital video camera",
+                  "name": {
+                    "name": {
+                      "name": {
+                        "name": "Digital video camera",
+                        "description": "",
+                        "quantity": 1,
+                        "stackable": true,
+                        "condition": 1,
+                        "price": 0
+                      },
+                      "description": "",
+                      "quantity": 1,
+                      "stackable": true,
+                      "condition": 1,
+                      "price": 0
+                    },
+                    "description": "",
+                    "quantity": 1,
+                    "stackable": true,
+                    "condition": 1,
+                    "price": 0
+                  },
                   "description": "",
                   "quantity": 1,
                   "stackable": true,
@@ -385,7 +574,28 @@
           {
             "name": {
               "name": {
-                "name": "Magnet",
+                "name": {
+                  "name": {
+                    "name": {
+                      "name": "Magnet",
+                      "description": "",
+                      "quantity": 1,
+                      "stackable": true,
+                      "condition": 1,
+                      "price": 0
+                    },
+                    "description": "",
+                    "quantity": 1,
+                    "stackable": true,
+                    "condition": 1,
+                    "price": 0
+                  },
+                  "description": "",
+                  "quantity": 1,
+                  "stackable": true,
+                  "condition": 1,
+                  "price": 0
+                },
                 "description": "",
                 "quantity": 1,
                 "stackable": true,
@@ -407,7 +617,28 @@
           {
             "name": {
               "name": {
-                "name": "Yo-yo",
+                "name": {
+                  "name": {
+                    "name": {
+                      "name": "Yo-yo",
+                      "description": "",
+                      "quantity": 1,
+                      "stackable": true,
+                      "condition": 1,
+                      "price": 0
+                    },
+                    "description": "",
+                    "quantity": 1,
+                    "stackable": true,
+                    "condition": 1,
+                    "price": 0
+                  },
+                  "description": "",
+                  "quantity": 1,
+                  "stackable": true,
+                  "condition": 1,
+                  "price": 0
+                },
                 "description": "",
                 "quantity": 1,
                 "stackable": true,
@@ -429,6 +660,133 @@
         ],
         "Signature Item": "Bracelet made by older sibling",
         "Cash": 2,
+        "Loadout": null,
+        "Weapons": []
+      },
+      "312447437359022082_3": {
+        "Name": "Pingle Dangus",
+        "Career": "Entertainer",
+        "Gender": "Female",
+        "Age": 38,
+        "Attributes": {
+          "Strength": 4,
+          "Agility": 2,
+          "Wits": 4,
+          "Empathy": 4
+        },
+        "Skills": {
+          "Heavy_Machinery": 1,
+          "Stamina": 0,
+          "Close_Combat": 1,
+          "Mobility": 0,
+          "Piloting": 1,
+          "Ranged_Combat": 0,
+          "Observation": 1,
+          "Comtech": 0,
+          "Survival": 1,
+          "Manipulation": 3,
+          "Command": 2,
+          "Medical_Aid": 0
+        },
+        "Talent": "Trustworthy",
+        "Agenda": "No one knows of your alcohol problem, but damn you need a drink.",
+        "Inventory": [
+          {
+            "name": {
+              "name": {
+                "name": "Seegson P-Dat",
+                "description": "",
+                "quantity": 1,
+                "stackable": true,
+                "condition": 1,
+                "price": 0
+              },
+              "description": "",
+              "quantity": 1,
+              "stackable": true,
+              "condition": 1,
+              "price": 0
+            },
+            "description": "",
+            "quantity": 1,
+            "stackable": true,
+            "condition": 1,
+            "price": 0
+          },
+          {
+            "name": {
+              "name": {
+                "name": "Switchblade knife",
+                "description": "",
+                "quantity": 1,
+                "stackable": true,
+                "condition": 1,
+                "price": 0
+              },
+              "description": "",
+              "quantity": 1,
+              "stackable": true,
+              "condition": 1,
+              "price": 0
+            },
+            "description": "",
+            "quantity": 1,
+            "stackable": true,
+            "condition": 1,
+            "price": 0
+          }
+        ],
+        "Signature Item": "A magazine article about the biggest show/casino/establishment on Earth where you hope to work one day",
+        "Cash": 700,
+        "Loadout": null,
+        "Weapons": []
+      },
+      "312447437359022082_4": {
+        "Name": "Horck Maven",
+        "Career": "Wildcatter",
+        "Gender": "Female",
+        "Age": 89,
+        "Attributes": {
+          "Strength": 4,
+          "Agility": 3,
+          "Wits": 4,
+          "Empathy": 3
+        },
+        "Skills": {
+          "Heavy_Machinery": 0,
+          "Stamina": 0,
+          "Close_Combat": 1,
+          "Mobility": 0,
+          "Piloting": 3,
+          "Ranged_Combat": 0,
+          "Observation": 3,
+          "Comtech": 0,
+          "Survival": 3,
+          "Manipulation": 0,
+          "Command": 0,
+          "Medical_Aid": 0
+        },
+        "Talent": "Miracle Mechanic",
+        "Agenda": "You're tormented by an everlasting itch for things remote, and love to sail forbidden seas.",
+        "Inventory": [
+          {
+            "name": {
+              "name": "Pups Mapping Device",
+              "description": "",
+              "quantity": 1,
+              "stackable": true,
+              "condition": 1,
+              "price": 0
+            },
+            "description": "",
+            "quantity": 1,
+            "stackable": true,
+            "condition": 1,
+            "price": 0
+          }
+        ],
+        "Signature Item": "A paper notebook and pencil",
+        "Cash": 300,
         "Loadout": null,
         "Weapons": []
       }

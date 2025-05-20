@@ -27,11 +27,15 @@ from character_creation.utils import (
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
-import datetime
+# Debug logging state
+debug_logging_enabled = True
 
 def log_debug(msg: str):
     ts = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     logger.debug(f"{ts} | {msg}")
+    if debug_logging_enabled:
+        with open(LOG_PATH, "a") as f:
+            f.write(f"{ts} [DEBUG] {msg}\n")
 
 # Load environment variables
 load_dotenv()
@@ -82,14 +86,6 @@ def debug_log(msg: str, sender: str = None, user: str = None):
 with open(DEBUG_LOG_PATH, "w") as f:
     f.write("")
 
-# --- PATCH send_dm to log all bot outputs ---
-async def send_dm(user, content, view=None):
-    try:
-        debug_log(content, sender="BOT", user=str(user))
-        return await user.send(content, view=view)
-    except discord.Forbidden:
-        return None
-
 # --- PATCH all user input to log responses ---
 async def wait_for_user_message(user, *args, **kwargs):
     def check(m):
@@ -97,11 +93,49 @@ async def wait_for_user_message(user, *args, **kwargs):
     
     try:
         msg = await bot.wait_for("message", check=check, *args, **kwargs)
-        debug_log(msg.content, sender="USER", user=str(user))
+        if debug_logging_enabled:
+            log_debug(f"[USER] {user}: {msg.content}")
         return msg
     except Exception as e:
         logger.error(f"Error waiting for user message: {e}")
+        if debug_logging_enabled:
+            log_debug(f"[ERROR] Failed to get user response from {user}: {str(e)}")
         raise
+
+# --- PATCH send_dm to log all bot outputs ---
+async def send_dm(user, content, view=None):
+    try:
+        if debug_logging_enabled:
+            # Summarize the bot's prompt instead of logging the full content
+            if "name" in content.lower():
+                log_debug(f"[BOT] Prompting {user} for character name")
+            elif "age" in content.lower():
+                log_debug(f"[BOT] Prompting {user} for character age")
+            elif "gender" in content.lower():
+                log_debug(f"[BOT] Prompting {user} for character gender")
+            elif "career" in content.lower():
+                log_debug(f"[BOT] Prompting {user} for character career")
+            elif "attributes" in content.lower():
+                log_debug(f"[BOT] Prompting {user} for attribute allocation")
+            elif "skills" in content.lower():
+                log_debug(f"[BOT] Prompting {user} for skill selection")
+            elif "talent" in content.lower():
+                log_debug(f"[BOT] Prompting {user} for talent selection")
+            elif "agenda" in content.lower():
+                log_debug(f"[BOT] Prompting {user} for personal agenda")
+            elif "gear" in content.lower():
+                log_debug(f"[BOT] Prompting {user} for gear selection")
+            elif "signature" in content.lower():
+                log_debug(f"[BOT] Prompting {user} for signature item")
+            elif "cash" in content.lower():
+                log_debug(f"[BOT] Prompting {user} for starting cash")
+            else:
+                log_debug(f"[BOT] Sending message to {user}")
+        return await user.send(content, view=view)
+    except discord.Forbidden:
+        if debug_logging_enabled:
+            log_debug(f"[ERROR] Failed to send DM to {user}: Forbidden")
+        return None
 
 from character_creation.steps import (
     select_personal_details, select_career, start_attr, assign_skills, select_talent, select_agenda, select_gear, select_signature_item, apply_starting_cash_and_finalize, finalize_character, edit_section
@@ -596,6 +630,8 @@ async def cmd_create(interaction: discord.Interaction):
     
     # Check if user is already in a creation session
     if user_id in creation_sessions and any(session for session in creation_sessions[user_id].values()):
+        if debug_logging_enabled:
+            log_debug(f"[FAILURE] User {user_id} attempted to create character while session in progress")
         await interaction.response.send_message(
             "```text\n[ERROR] You already have a character creation session in progress. Please complete or cancel it first.\n```",
             ephemeral=True
@@ -606,7 +642,8 @@ async def cmd_create(interaction: discord.Interaction):
     
     # Generate a unique character ID
     char_id = f"{user.id}_{len(user_chars) + 1}"
-    log_debug(f"Start char creation: user {user_id}, char {char_id}")
+    if debug_logging_enabled:
+        log_debug(f"[OPERATION] Starting character creation for user {user_id}, char {char_id}")
     
     # Initialize the user's session
     if user_id not in creation_sessions:
@@ -641,6 +678,8 @@ async def cmd_create(interaction: discord.Interaction):
         await select_personal_details(user, char_id, send_dm, wait_for_user_message, creation_sessions, logger)
     except Exception as e:
         logger.error(f"Error in character creation: {e}")
+        if debug_logging_enabled:
+            log_debug(f"[ERROR] Character creation failed for user {user_id}: {str(e)}")
         # Clean up the session
         if user_id in creation_sessions and char_id in creation_sessions[user_id]:
             del creation_sessions[user_id][char_id]
@@ -817,6 +856,8 @@ async def cmd_characters(interaction: discord.Interaction):
     user_chars = data_manager.get_user_characters(user_id)
     primary_id = data_manager.primary_characters.get(user_id)
     if not user_chars:
+        if debug_logging_enabled:
+            log_debug(f"[FAILURE] Characters command for {interaction.user}: No characters found")
         await interaction.response.send_message("```text\n[ERROR] No characters found.\n```", ephemeral=True)
         return
     char_list = ["```text", ">> YOUR CHARACTERS <<", ""]
@@ -825,11 +866,20 @@ async def cmd_characters(interaction: discord.Interaction):
         char_list.append(f"{char.name} ({char.career}){' ★' if is_primary else ''}")
     char_list.append("Use the buttons below to manage your characters.")
     char_list.append("```")
+    if debug_logging_enabled:
+        log_debug(f"[SUCCESS] Characters command for {interaction.user}: Displayed {len(user_chars)} characters")
     await interaction.response.send_message('\n'.join(char_list), view=CharacterListView(user_chars, primary_id), ephemeral=True)
 
 @bot.event
 async def on_interaction(interaction: discord.Interaction):
     try:
+        if debug_logging_enabled:
+            # Only log the command/interaction type and user, not the full data
+            interaction_type = interaction.type.name
+            command_name = interaction.data.get('name', '') if interaction.type == discord.InteractionType.application_command else ''
+            custom_id = interaction.data.get('custom_id', '') if interaction.type == discord.InteractionType.component else ''
+            log_debug(f"[INTERACTION] {interaction_type} from {interaction.user} - {command_name or custom_id}")
+        
         if interaction.type == discord.InteractionType.component:
             custom_id = interaction.data.get("custom_id", "")
             if custom_id.startswith("delete_"):
@@ -840,6 +890,9 @@ async def on_interaction(interaction: discord.Interaction):
                 if char_id in user_chars:
                     # Store the character name before deletion for the message
                     char_name = user_chars[char_id].name
+                    if debug_logging_enabled:
+                        log_debug(f"[OPERATION] Deleting character {char_name} ({char_id}) for user {user_id}")
+                    
                     # Delete the character
                     data_manager.delete_character(user_id, char_id)
                     # Get updated character list
@@ -854,10 +907,53 @@ async def on_interaction(interaction: discord.Interaction):
                         content=f"```text\nDeleted character {char_name}.\n```",
                         view=CharacterListView(user_chars, primary_id) if user_chars else None
                     )
+                    if debug_logging_enabled:
+                        log_debug(f"[SUCCESS] Deleted character {char_name} ({char_id}) for user {user_id}")
                 else:
+                    if debug_logging_enabled:
+                        log_debug(f"[FAILURE] Failed to delete character {char_id} for user {user_id}: Character not found")
                     await interaction.response.send_message("```text\n[ERROR] Character not found.\n```", ephemeral=True)
+            elif custom_id.startswith("primary_"):
+                char_id = custom_id.split("_")[1]
+                user_id = str(interaction.user.id)
+                user_chars = data_manager.get_user_characters(user_id)
+                
+                if char_id in user_chars:
+                    if debug_logging_enabled:
+                        log_debug(f"[OPERATION] Setting primary character {user_chars[char_id].name} ({char_id}) for user {user_id}")
+                    # Set as primary character
+                    data_manager.set_primary_character(user_id, char_id)
+                    if debug_logging_enabled:
+                        log_debug(f"[SUCCESS] Set primary character {user_chars[char_id].name} ({char_id}) for user {user_id}")
+                    await interaction.response.send_message(f"```text\n[OK] Set {user_chars[char_id].name} as your primary character.\n```", ephemeral=True)
+                else:
+                    if debug_logging_enabled:
+                        log_debug(f"[FAILURE] Failed to set primary character {char_id} for user {user_id}: Character not found")
+                    await interaction.response.send_message("```text\n[ERROR] Character not found.\n```", ephemeral=True)
+            elif custom_id.startswith("view_"):
+                char_id = custom_id.split("_")[1]
+                user_id = str(interaction.user.id)
+                user_chars = data_manager.get_user_characters(user_id)
+                
+                if char_id in user_chars:
+                    if debug_logging_enabled:
+                        log_debug(f"[OPERATION] Viewing character {user_chars[char_id].name} ({char_id}) for user {user_id}")
+                    # Display character sheet
+                    await interaction.response.send_message(f"```text\nDisplaying character sheet for {user_chars[char_id].name}...\n```", ephemeral=True)
+                    if debug_logging_enabled:
+                        log_debug(f"[SUCCESS] Displayed character sheet for {user_chars[char_id].name} ({char_id})")
+                else:
+                    if debug_logging_enabled:
+                        log_debug(f"[FAILURE] Failed to view character {char_id} for user {user_id}: Character not found")
+                    await interaction.response.send_message("```text\n[ERROR] Character not found.\n```", ephemeral=True)
+            elif custom_id == "exit":
+                if debug_logging_enabled:
+                    log_debug(f"[SUCCESS] User {interaction.user} exited character management")
+                await interaction.response.send_message("```text\n[OK] Exited character management.\n```", ephemeral=True)
     except Exception as e:
         logger.error(f"Error handling interaction: {e}")
+        if debug_logging_enabled:
+            log_debug(f"[ERROR] Error in interaction handler: {str(e)}")
         # If we haven't responded to the interaction yet, send an error message
         if not interaction.response.is_done():
             await interaction.response.send_message("```text\n[ERROR] An error occurred while processing your request.\n```", ephemeral=True)
@@ -1093,15 +1189,21 @@ async def cmd_loadout(interaction: discord.Interaction):
     user_id = str(user.id)
     char = data_manager.get_primary_character(user_id)
     if not char:
+        if debug_logging_enabled:
+            log_debug(f"[FAILURE] Loadout command failed for {user}: No character found")
         await interaction.response.send_message("```text\n[ERROR] No character sheet found.\n```", ephemeral=True)
         return
     if not char.loadout or not (char.loadout.suit or char.loadout.clothing or char.loadout.armor or char.loadout.accessories):
+        if debug_logging_enabled:
+            log_debug(f"[SUCCESS] Loadout command for {user}: No wearables equipped")
         await interaction.response.send_message("```text\n[LOADOUT]\nNo wearables equipped.\n```", ephemeral=True)
         return
     # Use the WearableLoadout display method
     lines = ["```text"]
     lines.append(char.loadout.display_loadout())
     lines.append("```")
+    if debug_logging_enabled:
+        log_debug(f"[SUCCESS] Loadout command for {user}: Displayed {len(char.loadout.get_all_items())} items")
     await interaction.response.send_message('\n'.join(lines), ephemeral=True)
 
 @bot.tree.command(name="weapons", description="View your equipped weapons.")
@@ -1144,6 +1246,15 @@ async def cmd_weapons(interaction: discord.Interaction):
             lines.append(f"[I{i}] More info about {weapon.name}")
     lines.append("```")
     await interaction.response.send_message('\n'.join(lines), ephemeral=True)
+
+@bot.tree.command(name="debuglog", description="Toggle debug logging for troubleshooting.")
+@app_commands.checks.has_permissions(administrator=True)
+async def cmd_debug_log(interaction: discord.Interaction):
+    global debug_logging_enabled
+    debug_logging_enabled = not debug_logging_enabled
+    status = "enabled" if debug_logging_enabled else "disabled"
+    await interaction.response.send_message(f"```text\n[OK] Debug logging {status}.\n```", ephemeral=True)
+    log_debug(f"Debug logging {status} by {interaction.user}")
 
 # Start the bot
 bot.run(os.getenv('DISCORD_TOKEN'))
