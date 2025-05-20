@@ -2,57 +2,253 @@
   "characters": {
     "203249116795371520": {
       "203249116795371520_1": {
-        "Name": "Character A",
-        "Career": "Colonial Marshal",
+        "Name": "Mister Manager",
+        "Career": "Pilot",
         "Gender": "Male",
-        "Age": 22,
+        "Age": 23,
         "Attributes": {
           "Strength": 4,
           "Agility": 4,
-          "Wits": 3,
-          "Empathy": 3
+          "Wits": 4,
+          "Empathy": 2
         },
         "Skills": {
           "Heavy_Machinery": 1,
-          "Stamina": 1,
-          "Close_Combat": 1,
-          "Mobility": 1,
-          "Piloting": 1,
-          "Ranged_Combat": 1,
-          "Observation": 1,
-          "Comtech": 1,
-          "Survival": 1,
-          "Manipulation": 1,
+          "Stamina": 0,
+          "Close_Combat": 0,
+          "Mobility": 0,
+          "Piloting": 3,
+          "Ranged_Combat": 3,
+          "Observation": 0,
+          "Comtech": 3,
+          "Survival": 0,
+          "Manipulation": 0,
           "Command": 0,
           "Medical_Aid": 0
         },
-        "Talent": "Investigator",
-        "Agenda": "Your longtime partner betrayed you and defected to a crime syndicate. Get even.",
-        "Gear": [
-          ".357 Magnum Revolver (x1)",
-          "Neversleep pills (x5)"
+        "Talent": "Full Throttle",
+        "Agenda": "It's about pushing the limit. Taking a chance. Taking risks -- so take a risk.",
+        "Inventory": [
+          {
+            "name": {
+              "name": {
+                "name": {
+                  "name": "IRC MK.50 Compression Suit",
+                  "description": "",
+                  "quantity": 1,
+                  "stackable": true,
+                  "condition": 1,
+                  "price": 0
+                },
+                "description": "",
+                "quantity": 1,
+                "stackable": true,
+                "condition": 1,
+                "price": 0
+              },
+              "description": "",
+              "quantity": 1,
+              "stackable": true,
+              "condition": 1,
+              "price": 0
+            },
+            "description": "",
+            "quantity": 1,
+            "stackable": true,
+            "condition": 1,
+            "price": 0
+          }
         ],
-        "Signature Item": "Photo of a loved one",
-        "Cash": 400
+        "Signature Item": "Dashboard dancer",
+        "Cash": 600,
+        "Loadout": null,
+        "Weapons": []
       },
       "203249116795371520_2": {
-        "Name": "Character B",
-        "Career": "Colonial Marine",
+        "Name": "Wally",
+        "Career": "Wildcatter",
         "Gender": "Female",
         "Age": 44,
         "Attributes": {
           "Strength": 4,
           "Agility": 4,
-          "Wits": 3,
-          "Empathy": 3
+          "Wits": 4,
+          "Empathy": 2
         },
         "Skills": {
           "Heavy_Machinery": 1,
-          "Stamina": 2,
-          "Close_Combat": 2,
-          "Mobility": 1,
-          "Piloting": 1,
-          "Ranged_Combat": 2,
+          "Stamina": 0,
+          "Close_Combat": 0,
+          "Mobility": 0,
+          "Piloting": 3,
+          "Ranged_Combat": 0,
+          "Observation": 3,
+          "Comtech": 0,
+          "Survival": 3,
+          "Manipulation": 0,
+          "Command": 0,
+          "Medical_Aid": 0
+        },
+        "Talent": "The Right Path",
+        "Agenda": "You're tormented by an everlasting itch for things remote, and love to sail forbidden seas.",
+        "Inventory": [
+          {
+            "name": {
+              "name": {
+                "name": {
+                  "name": "Eco All World Survival Suit",
+                  "description": "",
+                  "quantity": 1,
+                  "stackable": true,
+                  "condition": 1,
+                  "price": 0
+                },
+                "description": "",
+                "quantity": 1,
+                "stackable": true,
+                "condition": 1,
+                "price": 0
+              },
+              "description": "",
+              "quantity": 1,
+              "stackable": true,
+              "condition": 1,
+              "price": 0
+            },
+            "description": "",
+            "quantity": 1,
+            "stackable": true,
+            "condition": 1,
+            "price": 0
+          }
+        ],
+        "Signature Item": "A paper notebook and pencil",
+        "Cash": 600,
+        "Loadout": null,
+        "Weapons": []
+      },
+      "203249116795371520_3": {
+        "Name": "Fart Barfunkel",
+        "Career": "Scientist",
+        "Gender": "Male",
+        "Age": 34,
+        "Attributes": {
+          "Strength": 2,
+          "Agility": 3,
+          "Wits": 5,
+          "Empathy": 4
+        },
+        "Skills": {
+          "Heavy_Machinery": 0,
+          "Stamina": 1,
+          "Close_Combat": 0,
+          "Mobility": 0,
+          "Piloting": 0,
+          "Ranged_Combat": 1,
+          "Observation": 3,
+          "Comtech": 2,
+          "Survival": 1,
+          "Manipulation": 1,
+          "Command": 0,
+          "Medical_Aid": 1
+        },
+        "Talent": "Inquisitive",
+        "Agenda": "You find it hard to delegate to others, even if it means taking on extra work.",
+        "Inventory": [
+          {
+            "name": "M314 Motion Tracker",
+            "description": "",
+            "quantity": 1,
+            "stackable": true,
+            "condition": 1,
+            "price": 0
+          },
+          {
+            "name": "Digital video camera",
+            "description": "",
+            "quantity": 1,
+            "stackable": true,
+            "condition": 1,
+            "price": 0
+          }
+        ],
+        "Signature Item": "Albert Einstein Award",
+        "Cash": 400,
+        "Loadout": null,
+        "Weapons": []
+      }
+    },
+    "142085565892788224": {
+      "142085565892788224_1": {
+        "Name": "Zip Lorenzo Chavez",
+        "Career": "Colonial Marine",
+        "Gender": "Male",
+        "Age": 34,
+        "Attributes": {
+          "Strength": 5,
+          "Agility": 3,
+          "Wits": 4,
+          "Empathy": 2
+        },
+        "Skills": {
+          "Heavy_Machinery": 0,
+          "Stamina": 3,
+          "Close_Combat": 3,
+          "Mobility": 0,
+          "Piloting": 0,
+          "Ranged_Combat": 3,
+          "Observation": 0,
+          "Comtech": 0,
+          "Survival": 1,
+          "Manipulation": 0,
+          "Command": 0,
+          "Medical_Aid": 0
+        },
+        "Talent": "Past the Limit",
+        "Agenda": "You are a decorated hero, you need to defend your reputation. At all costs.",
+        "Inventory": [
+          {
+            "name": "IRC MK.35 Pressure Suit",
+            "description": "",
+            "quantity": 1,
+            "stackable": true,
+            "condition": 1,
+            "price": 0
+          },
+          {
+            "name": "M41A Pulse Rifle",
+            "description": "",
+            "quantity": 1,
+            "stackable": true,
+            "condition": 1,
+            "price": 0
+          }
+        ],
+        "Signature Item": "Lost friend's dog tags",
+        "Cash": 400,
+        "Loadout": null,
+        "Weapons": []
+      }
+    },
+    "289198795625857026": {
+      "289198795625857026_1": {
+        "Name": "Elias Thorne",
+        "Career": "Roughneck",
+        "Gender": "Male",
+        "Age": 38,
+        "Attributes": {
+          "Strength": 4,
+          "Agility": 4,
+          "Wits": 4,
+          "Empathy": 2
+        },
+        "Skills": {
+          "Heavy_Machinery": 3,
+          "Stamina": 3,
+          "Close_Combat": 3,
+          "Mobility": 0,
+          "Piloting": 0,
+          "Ranged_Combat": 0,
           "Observation": 1,
           "Comtech": 0,
           "Survival": 0,
@@ -60,18 +256,76 @@
           "Command": 0,
           "Medical_Aid": 0
         },
-        "Talent": "Overkill",
-        "Agenda": "The death of your buddy has spooked you\u2014now you secretly fear combat and confrontation. You need to overcome your fear.",
-        "Gear": [
-          "M3 Personnel Armor (x1)",
-          "M41A Pulse Rifle (x1)"
+        "Talent": "True Grit",
+        "Agenda": "You once sacrificed your family for the job. Now you won't let your friends down -- ever.",
+        "Inventory": [
+          {
+            "name": "IRC MK.50 Compression Suit",
+            "description": "",
+            "quantity": 1,
+            "stackable": true,
+            "condition": 1,
+            "price": 0
+          }
         ],
-        "Signature Item": "Bullet that you survived",
-        "Cash": 100
+        "Signature Item": "Photo of partner",
+        "Cash": 600,
+        "Loadout": null,
+        "Weapons": [
+          {
+            "name": "Mechanical Cutting Torch",
+            "description": "",
+            "quantity": 1,
+            "stackable": true,
+            "condition": 1,
+            "price": 0,
+            "bonus": 0,
+            "damage": 3,
+            "range": "Engaged",
+            "weight": 1,
+            "cost": 300,
+            "lore": "A utilitarian blowtorch primarily used for welding and cutting through metal, though it can serve as an improvised melee weapon in a pinch. A relic of practicality, the torch must make a Power Supply roll after each use.",
+            "weapon_class": "melee",
+            "damage_type": "energy",
+            "full_auto": false,
+            "uses_ammo": true,
+            "ammo_types": null,
+            "single_shot": false,
+            "power_supply": 5,
+            "special_ammo_effect": null,
+            "blast_power": null,
+            "fire_intensity": null,
+            "fire_on_hit": false,
+            "inflicts_condition": null,
+            "special_effect": null,
+            "grappling": false,
+            "armor_effect": "armor_piercing",
+            "max_damage": null,
+            "range_damage_falloff": null,
+            "direct_target_bonus": null,
+            "detonation_trigger": null,
+            "area_effect": null,
+            "persistent_effect": null,
+            "secondary_weapon": null,
+            "integrated_in": null,
+            "vulnerable_component": null,
+            "overload_risk": null,
+            "malfunction_risk": null,
+            "autonomous": false,
+            "autonomous_skill": null,
+            "hidden": null,
+            "alternate_fire_mode": null,
+            "user_condition_penalty": null,
+            "critical_override": null,
+            "recharge_time": null
+          }
+        ]
       }
     }
   },
   "primary_characters": {
-    "203249116795371520": "203249116795371520_1"
+    "203249116795371520": "203249116795371520_3",
+    "142085565892788224": "142085565892788224_1",
+    "289198795625857026": "289198795625857026_1"
   }
 }

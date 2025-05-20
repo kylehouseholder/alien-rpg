@@ -1,172 +1,377 @@
-from typing import Dict, List, Optional
-from dataclasses import dataclass, field
-from .items import ClothingItem, ArmorItem, SuitItem, AccessoryItem, WearableItem, WEARABLE_SLOTS
+from .items import ArmorItem, SuitItem, ClothingItem, AccessoryItem
+from models.items import Item, ConsumableItem, Inventory
+from models.weapon_item import WeaponItem
 
-@dataclass
-class WearableLoadout:
-    """Manages a character's equipped wearables, including clothing, armor, suits, and accessories."""
-    clothing: Optional[ClothingItem] = None
-    armor: List[ArmorItem] = field(default_factory=list)
-    suit: Optional[SuitItem] = None
-    accessories: List[AccessoryItem] = field(default_factory=list)
-    slots: Dict[str, Optional[WearableItem]] = field(default_factory=lambda: {slot: None for slot in WEARABLE_SLOTS})
-    
-    def equip(self, item: WearableItem) -> bool:
-        """Equip a wearable item. Returns True if successful."""
-        # Handle suits (mutually exclusive with clothing/armor)
-        if isinstance(item, SuitItem):
-            if self.suit:
-                return False  # Only one suit
-            self.suit = item
-            for slot in item.coverage_slots:
-                self.slots[slot] = item
-            # Remove all armor (ignored while suit is on)
-            self.armor.clear()
-            return True
-        # Handle clothing (mutually exclusive with suit)
-        if isinstance(item, ClothingItem):
-            if self.suit:
-                return False
-            if self.clothing:
-                return False
-            self.clothing = item
-            for slot in item.coverage_slots:
-                self.slots[slot] = item
-            return True
-        # Handle armor (mutually exclusive with suit)
-        if isinstance(item, ArmorItem):
-            if self.suit:
-                return False
-            # Check for slot overlap
-            for slot in item.coverage_slots:
-                if self.slots[slot] and not isinstance(self.slots[slot], ClothingItem):
-                    return False
-            self.armor.append(item)
-            for slot in item.coverage_slots:
-                self.slots[slot] = item
-            return True
-        # Handle accessories
-        if isinstance(item, AccessoryItem):
-            # If suit is on, check compatibility
-            if self.suit and (not item.suit_compatible or (self.suit.suit_allows_accessory_slots and item.slot not in self.suit.suit_allows_accessory_slots)):
-                return False
-            # Only one per slot
-            for acc in self.accessories:
-                if acc.slot == item.slot:
-                    return False
-            self.accessories.append(item)
-            self.slots[item.slot] = item
-            return True
-        return False
-    
-    def unequip(self, item: WearableItem) -> bool:
-        """Unequip a wearable item. Returns True if successful."""
-        if isinstance(item, SuitItem) and self.suit == item:
-            for slot in item.coverage_slots:
-                if self.slots[slot] == item:
-                    self.slots[slot] = None
-            self.suit = None
-            return True
-        if isinstance(item, ClothingItem) and self.clothing == item:
-            for slot in item.coverage_slots:
-                if self.slots[slot] == item:
-                    self.slots[slot] = None
-            self.clothing = None
-            return True
-        if isinstance(item, ArmorItem) and item in self.armor:
-            for slot in item.coverage_slots:
-                if self.slots[slot] == item:
-                    self.slots[slot] = None
-            self.armor.remove(item)
-            return True
-        if isinstance(item, AccessoryItem) and item in self.accessories:
-            if self.slots[item.slot] == item:
-                self.slots[item.slot] = None
-            self.accessories.remove(item)
-            return True
-        return False
-    
-    def get_armor_per_slot(self) -> Dict[str, int]:
-        """Calculate armor rating for each body slot."""
-        armor_per_slot = {slot: 0 for slot in WEARABLE_SLOTS}
-        # If suit is on, only suit AR counts
-        if self.suit:
-            for slot in self.suit.coverage_slots:
-                armor_per_slot[slot] = self.suit.armor_rating
-            return armor_per_slot
-        # Otherwise, sum armor from armor items
-        for armor in self.armor:
-            for slot in armor.coverage_slots:
-                armor_per_slot[slot] += armor.armor_rating
-        # Clothing AR: only add to torso (flat bonus)
-        if self.clothing and self.clothing.armor_rating > 0:
-            armor_per_slot["torso"] += self.clothing.armor_rating
-        # Accessories that provide armor
-        for acc in self.accessories:
-            for slot in acc.coverage_slots:
-                armor_per_slot[slot] += acc.armor_rating
-        return armor_per_slot
-    
-    def get_total_encumbrance(self) -> float:
-        """Calculate total encumbrance from all equipped items."""
-        total = 0.0
-        if self.suit:
-            total += self.suit.encumbrance
-        if self.clothing:
-            total += self.clothing.encumbrance
-        for armor in self.armor:
-            total += armor.encumbrance
-        for acc in self.accessories:
-            total += acc.encumbrance
-        return total
-    
-    def get_carry_bonus(self) -> int:
-        """Calculate total carry bonus from equipped items."""
-        bonus = 0
-        for acc in self.accessories:
-            if acc.carry_bonus:
-                bonus += acc.carry_bonus
-        return bonus
-    
-    def display_loadout(self) -> str:
-        """Return a formatted string showing the current loadout."""
-        lines = [">> LOADOUT <<"]
-        
-        if self.clothing:
-            lines.append(f"\nClothing: {self.clothing.name}")
-            if self.clothing.armor_rating > 0:
-                lines.append(f"Armor Rating: {self.clothing.armor_rating}")
-            if self.clothing.encumbrance > 0:
-                lines.append(f"Encumbrance: {self.clothing.encumbrance}")
-        
-        if self.armor:
-            lines.append("\nArmor:")
-            for item in self.armor:
-                lines.append(f"• {item.name}")
-                if item.armor_rating > 0:
-                    lines.append(f"  Armor Rating: {item.armor_rating}")
-                if item.encumbrance > 0:
-                    lines.append(f"  Encumbrance: {item.encumbrance}")
-        
-        if self.suit:
-            lines.append(f"\nSuit: {self.suit.name}")
-            if self.suit.armor_rating > 0:
-                lines.append(f"Armor Rating: {self.suit.armor_rating}")
-            if self.suit.encumbrance > 0:
-                lines.append(f"Encumbrance: {self.suit.encumbrance}")
-            if self.suit.air_supply_rating > 0:
-                lines.append(f"Air Supply: {self.suit.air_supply_rating}")
-        
-        if self.accessories:
-            lines.append("\nAccessories:")
-            for item in self.accessories:
-                lines.append(f"• {item.name}")
-                if item.armor_rating > 0:
-                    lines.append(f"  Armor Rating: {item.armor_rating}")
-                if item.encumbrance > 0:
-                    lines.append(f"  Encumbrance: {item.encumbrance}")
-        
-        lines.append(f"\nTotal Encumbrance: {self.get_total_encumbrance()}")
-        lines.append(f"Carry Bonus: {self.get_carry_bonus()}")
-        
-        return "\n".join(lines) 
+# --- Clothing ---
+bdus = ClothingItem(
+    name="Battledress Utilities (BDUs)",
+    armor_rating=0,
+    encumbrance=0.0,
+    cost=55,
+    lore="Standard camouflage fatigues worn by troops in all environments.",
+    coverage_slots=["torso", "left_arm", "right_arm", "left_leg", "right_leg"]
+)
+
+ghillie_suit = ClothingItem(
+    name="Ghillie Suit",
+    armor_rating=0,
+    encumbrance=1.0,
+    cost=1000,
+    lore="Customized camouflage gear designed for stealth in specific terrain.",
+    conditional_modifiers=[
+        {"skill": "MOBILITY", "modifier": "+2", "condition": "when avoiding detection in appropriate terrain"}
+    ],
+    built_in_systems=["heat masking", "infrared scatter"],
+    coverage_slots=["torso", "left_arm", "right_arm", "left_leg", "right_leg"]
+)
+
+# --- Armor ---
+m3_personnel_armor = ArmorItem(
+    name="M3 Personnel Armor",
+    armor_rating=6,
+    encumbrance=1.0,
+    coverage_slots=["torso", "left_leg", "right_leg"],
+    cost=1200,
+    lore="Standard-issue body armor worn by Colonial Marines, known for its rugged, tactical design.",
+    built_in_systems=["comm unit", "PDT", "vitals monitor", "combat webbing"]
+)
+
+kevlar_riot_vest = ArmorItem(
+    name="Kevlar Riot Vest",
+    armor_rating=4,
+    encumbrance=1.0,
+    coverage_slots=["torso"],
+    cost=600,
+    lore="Woven fiber body armor used by colonial law enforcement and security teams.",
+    built_in_systems=["comm unit"]
+)
+
+# --- Suit ---
+irc_mk50_compression_suit = SuitItem(
+    name="IRC Mk.50 Compression Suit",
+    armor_rating=2,
+    encumbrance=1.0,
+    cost=15000,
+    lore="A dependable, aging vacuum suit still widely used across the Frontier.",
+    air_supply_rating=5,
+    sealed=True,
+    environment_type="vacuum",
+    built_in_systems=["comm unit", "HUD", "headlamp", "helmet cam"],
+    coverage_slots=["suit", "head", "torso", "left_arm", "right_arm", "left_leg", "right_leg", "feet"]
+)
+
+eco_survival_suit = SuitItem(
+    name="Eco All-World Survival Suit",
+    armor_rating=4,
+    encumbrance=2.0,
+    cost=30000,
+    lore="A high-end EVA hardsuit designed for zero-G missions and hostile environments.",
+    air_supply_rating=6,
+    sealed=True,
+    environment_type="vacuum",
+    hazard_resistances=["extreme cold", "extreme pressure"],
+    built_in_systems=["HUD", "helmet cam", "comm unit", "data ports"],
+    zero_g_thrusters=True,
+    coverage_slots=["suit", "head", "torso", "left_arm", "right_arm", "left_leg", "right_leg", "feet"]
+)
+
+# --- Accessory ---
+marine_backpack = AccessoryItem(
+    name="USCMC Field Backpack",
+    armor_rating=0,
+    encumbrance=0.5,
+    slot="back",
+    suit_compatible=True,
+    cost=100,
+    lore="Standard-issue field backpack for Colonial Marines.",
+    carry_bonus=2
+)
+
+combat_armor_6b90 = ArmorItem(
+    name="6B90 Combat Armor",
+    armor_rating=6,
+    encumbrance=2.0,
+    coverage_slots=["head", "torso", "left_arm", "right_arm", "left_leg", "right_leg"],
+    cost=1000,
+    lore="Heavier than USCMC gear, this bulky UPP armor protects vital areas with tactical oversight.",
+    built_in_systems=["comm unit", "tactical camera"]
+)
+
+ccc5_compression_suit = SuitItem(
+    name="CCC5 Combat Compression Suit",
+    armor_rating=2,
+    encumbrance=2.0,
+    cost=15500,
+    lore="An armored vacuum suit with a narrow helmet view and a built-in AK-104 rifle.",
+    air_supply_rating=5,
+    sealed=True,
+    environment_type="vacuum",
+    skill_modifiers={"OBSERVATION": -1},
+    integrated_weapon="AK-104",
+    coverage_slots=["suit", "head", "torso", "left_arm", "right_arm", "left_leg", "right_leg", "feet"]
+)
+
+bimex_personal_shades = AccessoryItem(
+    name="BiMex Personal Shades",
+    armor_rating=0,
+    encumbrance=0,
+    slot="face",
+    suit_compatible=True,
+    cost=150,
+    lore="Stylish, military-issue eyewear designed to shield against battlefield glare and optical hazards.",
+    conditional_deflection={
+        "trigger": "hit by laser weapon",
+        "mechanic": "Roll 1 Base Die; on 6, beam is deflected and damage is negated; item is destroyed"
+    },
+    coverage_slots=["face"]
+)
+
+pdt_locator_set = AccessoryItem(
+    name="PDT/L Bracelet and Locator Tube",
+    armor_rating=0,
+    encumbrance=0.25,
+    slot="left_arm",
+    suit_compatible=True,
+    cost=100,
+    lore="A short-range tracking system pairing a wrist-worn transmitter with a directional locator tube.",
+    locator_linked=True,
+    coverage_slots=["left_arm", "right_arm"]
+)
+
+expedition_fatigues = ClothingItem(
+    name="Expedition Fatigues",
+    armor_rating=0,
+    encumbrance=0,
+    cost=55,
+    lore="Thermal-regulating undersuit designed for frontier exploration in extreme climates.",
+    skill_modifiers={"STAMINA": +1},
+    hazard_resistances=["heat", "cold", "vacuum"],
+    coverage_slots=["torso", "left_arm", "right_arm", "left_leg", "right_leg"]
+)
+
+m8a2_thermal_boots = AccessoryItem(
+    name="M8A2 Thermal Boots",
+    armor_rating=0,
+    encumbrance=0,
+    slot="feet",
+    suit_compatible=True,
+    cost=75,
+    lore="Insulated boots made for prolonged exposure to freezing temperatures.",
+    skill_modifiers={"STAMINA": +1}
+)
+
+m11_platypus_fins = AccessoryItem(
+    name="M11 Performance Enhanced Platypus Fins",
+    armor_rating=0,
+    encumbrance=0.5,
+    slot="feet",
+    suit_compatible=True,
+    cost=100,
+    lore="Advanced fins engineered for high-performance aquatic movement.",
+    conditional_modifiers=[
+        {"skill": "MOBILITY", "modifier": "+2", "condition": "when underwater"}
+    ]
+)
+
+presidium_mk8_se_suit = SuitItem(
+    name="Presidium Mark VIII Advanced SE Suit",
+    armor_rating=1,
+    encumbrance=2.0,
+    cost=5000,
+    lore="A sleek, reinforced exosuit designed for Weyland-era deep space expeditions.",
+    air_supply_rating=3,
+    sealed=True,
+    environment_type="vacuum",
+    attribute_modifiers={"STRENGTH": +1},
+    built_in_systems=["comm unit", "HUD", "helmet cam", "body cam", "data analysis system", "vitals tracker", "high-beam shoulder lamp"],
+    coverage_slots=["suit", "head", "torso", "left_arm", "right_arm", "left_leg", "right_leg", "feet"]
+)
+
+eco2_high_pressure_suit = SuitItem(
+    name="ECO2 All World Systems High Pressure Survival Suit",
+    armor_rating=1,
+    encumbrance=2.0,
+    cost=20000,
+    lore="A reinforced EVA suit for vacuum and deep pressure survival with full sensor integration.",
+    air_supply_rating=6,
+    sealed=True,
+    environment_type="vacuum",
+    hazard_resistances=["high pressure", "vacuum", "extreme cold"],
+    built_in_systems=["HUD", "camera", "comm unit", "data ports"],
+    zero_g_thrusters=True,
+    coverage_slots=["suit", "head", "torso", "left_arm", "right_arm", "left_leg", "right_leg", "feet"]
+)
+
+yaws3_survival_shelter = SuitItem(
+    name="YAWS3 Yutani All Weather Singular Survival Shelter",
+    armor_rating=0,
+    encumbrance=3.0,
+    cost=30000,
+    lore="A self-contained survival pod designed for long-term field isolation and emergency containment.",
+    air_supply_rating=12,
+    power_supply_rating=6,
+    sealed=True,
+    environment_type="vacuum",
+    activated_encumbrance=4.0,
+    built_in_systems=["PDT", "motion detector", "rebreather", "medkit", "stim delivery system"],
+    coverage_slots=["suit", "head", "torso", "left_arm", "right_arm", "left_leg", "right_leg", "feet"]
+)
+
+el7hxc_hex_capsule = SuitItem(
+    name="Omni-Tech EL7-HXC Emergency Landing Hex Capsule",
+    armor_rating=1,
+    encumbrance=3.0,
+    cost=150000,
+    lore="An experimental hex-field survival device that deploys a reactive energy shell around its occupant.",
+    power_supply_rating=3,
+    sealed=False,
+    environment_type="limited vacuum",
+    activated_encumbrance=4.0,
+    special_deflection_dice=10,
+    special_deflection_condition="explosive, energy, fire, or radiation damage",
+    coverage_slots=["suit", "head", "torso", "left_arm", "right_arm", "left_leg", "right_leg", "feet"]
+)
+
+armat_cm4_riot_shield = ArmorItem(
+    name="Armat CM4 Plastisteel Riot Shield",
+    armor_rating=5,
+    encumbrance=1.0,
+    coverage_slots=["left_arm", "torso"],
+    cost=300,
+    lore="A lightweight shield used by marines and marshals for cover during urban operations.",
+    provides_cover=True
+)
+
+military_hazmat_suit = SuitItem(
+    name="Military Grade HAZMAT Suit",
+    armor_rating=1,
+    encumbrance=2.0,
+    cost=1000,
+    lore="An impermeable bodysuit used in chemically hazardous zones and contaminated facilities.",
+    air_supply_rating=2,
+    sealed=True,
+    environment_type="hazardous",
+    hazard_resistances=["chemical", "biological", "radiation"],
+    radiation_absorption_dice=6,
+    built_in_systems=["comm unit"],
+    coverage_slots=["suit", "head", "torso", "left_arm", "right_arm", "left_leg", "right_leg", "feet"]
+)
+
+udep_environmental_poncho = ClothingItem(
+    name="UDEP Ultra Diffusive Environmental Poncho",
+    armor_rating=0,
+    encumbrance=1.0,
+    cost=500,
+    lore="A rain-repellent poncho that masks infrared and protects against field exposure to contaminants.",
+    conditional_modifiers=[
+        {"skill": "STAMINA", "modifier": "+2", "condition": "against chemical and biological contaminants"},
+        {"skill": "STEALTH", "modifier": "+2", "condition": "in wet environments"}
+    ],
+    coverage_slots=["torso"]
+)
+
+g_suit = ClothingItem(
+    name="G-Suit",
+    armor_rating=0,
+    encumbrance=1.0,
+    cost=120,
+    lore="A pilot's jumpsuit with built-in pressure plates and a backup air cylinder.",
+    air_supply_rating=1,
+    coverage_slots=["torso", "left_leg", "right_leg"]
+)
+
+m10_ballistic_helmet = AccessoryItem(
+    name="M10 Ballistic Helmet",
+    armor_rating=0,
+    encumbrance=0,
+    slot="head",
+    suit_compatible=True,
+    cost=0,
+    lore="A standard-issue USCMC helmet equipped with tactical optics and IFF targeting.",
+    built_in_systems=["tactical camera", "infrared sight", "IFF transmitter"],
+    integrated_in="M3 Personnel Armor"
+)
+
+life_vest = AccessoryItem(
+    name="Life Vest",
+    armor_rating=0,
+    encumbrance=1.0,
+    slot="torso",
+    suit_compatible=True,
+    cost=65,
+    lore="A buoyant inflatable vest designed to keep wearers afloat in most liquids.",
+    built_in_systems=["flashlight", "beacon transmitter", "PDT"],
+    coverage_slots=["torso"]
+)
+
+cold_weather_parka = ClothingItem(
+    name="Cold Weather Parka",
+    armor_rating=0,
+    encumbrance=0.25,
+    cost=100,
+    lore="A heated hooded coat for extreme cold climates, favored on terraformed worlds.",
+    skill_modifiers={"STAMINA": +2},
+    coverage_slots=["torso", "left_arm", "right_arm"]
+)
+
+# --- Boots ---
+m3b_standard_boots = AccessoryItem(
+    name="M3B Standard Boots",
+    armor_rating=0,
+    encumbrance=0,
+    slot="feet",
+    suit_compatible=True,
+    cost=40,
+    lore="Common-issue military boots suited for dry decks and base wear."
+)
+
+m7_jungle_boots = AccessoryItem(
+    name="M7 Jungle Boots",
+    armor_rating=0,
+    encumbrance=0,
+    slot="feet",
+    suit_compatible=True,
+    cost=60,
+    lore="Moisture-wicking footwear designed for prolonged field use in wet zones."
+)
+
+m7a_dry_boots = AccessoryItem(
+    name="M7A Dry Boots",
+    armor_rating=0,
+    encumbrance=0,
+    slot="feet",
+    suit_compatible=True,
+    cost=60,
+    lore="Moisture-wicking boots designed to prevent foot rot in wet environments."
+)
+
+all_wearable_items = [
+    bdus,
+    ghillie_suit,
+    m3_personnel_armor,
+    kevlar_riot_vest,
+    irc_mk50_compression_suit,
+    eco_survival_suit,
+    marine_backpack,
+    combat_armor_6b90,
+    ccc5_compression_suit,
+    bimex_personal_shades,
+    pdt_locator_set,
+    expedition_fatigues,
+    m8a2_thermal_boots,
+    m11_platypus_fins,
+    presidium_mk8_se_suit,
+    eco2_high_pressure_suit,
+    yaws3_survival_shelter,
+    el7hxc_hex_capsule,
+    armat_cm4_riot_shield,
+    military_hazmat_suit,
+    udep_environmental_poncho,
+    g_suit,
+    m10_ballistic_helmet,
+    life_vest,
+    cold_weather_parka,
+    m3b_standard_boots,
+    m7_jungle_boots,
+    m7a_dry_boots
+] 
