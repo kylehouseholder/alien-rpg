@@ -829,165 +829,38 @@ async def cmd_characters(interaction: discord.Interaction):
 
 @bot.event
 async def on_interaction(interaction: discord.Interaction):
-    if not interaction.type == discord.InteractionType.component:
-        return
-    custom_id = interaction.data.get("custom_id")
-    user_id = str(interaction.user.id)
-    user_chars = data_manager.get_user_characters(user_id)
-    primary_id = data_manager.primary_characters.get(user_id)
-    
-    if custom_id == "exit":
-        await interaction.response.edit_message(content="```text\n[INFO] Exited character management.\n```", view=None)
-        return
-    if custom_id == "back":
-        char_list = ["```text", ">> YOUR CHARACTERS <<", ""]
-        for char_id, char in user_chars.items():
-            is_primary = char_id == primary_id
-            char_list.append(f"{char.name} ({char.career}){' ★' if is_primary else ''}")
-        char_list.append("Use the buttons below to manage your characters.")
-        char_list.append("```")
-        await interaction.response.edit_message(content='\n'.join(char_list), view=CharacterListView(user_chars, primary_id))
-        return
-    if custom_id.startswith("view_"):
-        char_id = custom_id[5:]
-        char = user_chars.get(char_id)
-        if not char:
-            await interaction.response.edit_message(content="```text\n[ERROR] Character not found.\n```", view=CharacterSheetView(user_chars, primary_id, char_id, "sheet"))
-            return
-        sheet = ["```text", ">> CHARACTER SHEET <<"]
-        # Basic Info
-        sheet.append(f"\nName: {char.name}")
-        sheet.append(f"Career: {char.career}")
-        sheet.append("\n")
-        # Personal Info
-        sheet.append(f"Personal Agenda: {char.agenda}")
-        sheet.append(f"Talent: {char.talent}")
-        sheet.append(f"Signature Item: {char.signature_item}")
-        sheet.append("\n")
-        # Attributes
-        sheet.append("Attributes:")
-        for attr in ["Strength", "Agility", "Wits", "Empathy"]:
-            value = getattr(char.attributes, attr.lower())
-            sheet.append(f"  {attr}: {value} {format_attribute_bar(value)}")
-        sheet.append("\n")
-        # Skills
-        sheet.append("Skills:")
-        for skill_name, value in char.skills.__dict__.items():
-            if value > 0:
-                name = skill_name.replace('_', ' ').title()
-                sheet.append(f"  {name}: {value} {format_skill_bar(value)}")
-        sheet.append("```")
-        await interaction.response.edit_message(content='\n'.join(sheet), view=CharacterSheetView(user_chars, primary_id, char_id, "sheet"))
-    elif custom_id.startswith("inventory_"):
-        char_id = custom_id[10:]
-        char = user_chars.get(char_id)
-        if not char:
-            await interaction.response.edit_message(content="```text\n[ERROR] Character not found.\n```", view=CharacterSheetView(user_chars, primary_id, char_id, "inventory"))
-            return
-        if not char.inventory.items:
-            await interaction.response.edit_message(content="```text\n[INVENTORY]\nYour inventory is empty.\n```", view=CharacterSheetView(user_chars, primary_id, char_id, "inventory"))
-            return
-        lines = ["```text", ">> INVENTORY <<"]
-        for item in char.inventory.items:
-            if isinstance(item, ConsumableItem):
-                form = getattr(item, 'form', 'unit')
-                form_plural = getattr(item, 'form_plural', 'units')
-                lines.append(f"• {item.name} (x{item.quantity} {form if item.quantity == 1 else form_plural})")
-            else:
-                lines.append(f"• {item.name} (x{getattr(item, 'quantity', 1)})")
-        lines.append("```")
-        await interaction.response.edit_message(content='\n'.join(lines), view=CharacterSheetView(user_chars, primary_id, char_id, "inventory"))
-    elif custom_id.startswith("weapons_"):
-        char_id = custom_id[8:]
-        char = user_chars.get(char_id)
-        if not char:
-            await interaction.response.edit_message(content="```text\n[ERROR] Character not found.\n```", view=CharacterSheetView(user_chars, primary_id, char_id, "weapons"))
-            return
-        if not char.weapons:
-            await interaction.response.edit_message(content="```text\n[WEAPONS]\nNo weapons equipped.\n```", view=CharacterSheetView(user_chars, primary_id, char_id, "weapons"))
-            return
-        lines = ["```text", ">> WEAPONS <<\n"]
-        # Primary weapon is the first in the list
-        primary = char.weapons[0]
-        skill, attr = get_skill_and_attr(primary)
-        type_icon = get_type_icon(primary)
-        ammo_icon = get_ammo_icon(primary)
-        mods = get_modifiers(primary)
-        lines.append("Primary Weapon")
-        lines.append(f"{primary.name} | {type_icon} [{primary.damage_type}] | {ammo_icon} [ammo reloads] | 🎲 [{skill} + {attr} + *{mods}]")
-        lines.append(f"💥 [damage] {primary.damage} | ✨ [bonus] +{primary.bonus} | 🎯[range]  {primary.range}")
-        if primary.lore:
-            lines.append(f'"{primary.lore}"')
-        lines.append("")
-        # Other weapons
-        if len(char.weapons) > 1:
-            lines.append("Other Weapons:")
-            for i, weapon in enumerate(char.weapons[1:], 1):
-                lines.append(f"{i}. {weapon.name}")
-            lines.append("")
-            lines.append("Options:")
-            for i, weapon in enumerate(char.weapons[1:], 1):
-                lines.append(f"[{i}] Switch to {weapon.name}")
-            lines.append(f"[I] More info about primary weapon")
-            for i, weapon in enumerate(char.weapons[1:], 1):
-                lines.append(f"[I{i}] More info about {weapon.name}")
-        lines.append("```")
-        await interaction.response.edit_message(content='\n'.join(lines), view=CharacterSheetView(user_chars, primary_id, char_id, "weapons"))
-    elif custom_id.startswith("loadout_"):
-        char_id = custom_id[8:]
-        char = user_chars.get(char_id)
-        if not char:
-            await interaction.response.edit_message(content="```text\n[ERROR] Character not found.\n```", view=CharacterSheetView(user_chars, primary_id, char_id, "loadout"))
-            return
-        if not char.loadout or not (char.loadout.suit or char.loadout.clothing or char.loadout.armor or char.loadout.accessories):
-            await interaction.response.edit_message(content="```text\n[LOADOUT]\nNo wearables equipped.\n```", view=CharacterSheetView(user_chars, primary_id, char_id, "loadout"))
-            return
-        lines = ["```text"]
-        lines.append(char.loadout.display_loadout())
-        lines.append("```")
-        await interaction.response.edit_message(content='\n'.join(lines), view=CharacterSheetView(user_chars, primary_id, char_id, "loadout"))
-    elif custom_id.startswith("primary_"):
-        char_id = custom_id[8:]
-        if char_id == primary_id:
-            await interaction.response.send_message("```text\n[INFO] This character is already your primary character.\n```", ephemeral=True)
-            return
-        data_manager.set_primary_character(user_id, char_id)
-        # Update Discord roles and nickname
-        user = await bot.fetch_user(int(user_id))
-        for guild in bot.guilds:
-            member = guild.get_member(user.id)
-            if member:
-                success, message = await update_user_roles_and_nickname(user, user_chars[char_id], guild)
-                if not success:
-                    logger.error(f"Failed to update roles in guild {guild.name}: {message}")
-        # Update the view to reflect the new primary character
-        if interaction.message.content.startswith("```text\n>> CHARACTER SHEET <<"):
-            # If we're in the character sheet view, update that view
-            await interaction.response.edit_message(content=f"```text\nSet {user_chars[char_id].name} as your primary character.\n```", view=CharacterSheetView(user_chars, char_id, char_id, "sheet"))
-        else:
-            # If we're in the character list view, update that view
-            await interaction.response.edit_message(content=f"```text\nSet {user_chars[char_id].name} as your primary character.\n```", view=CharacterListView(user_chars, char_id))
-    elif custom_id.startswith("delete_"):
-        char_id = custom_id[7:]
-        if char_id == primary_id and len(user_chars) > 1:
-            await interaction.response.send_message("```text\n[ERROR] Cannot delete your primary character. Set another character as primary first.\n```", ephemeral=True)
-            return
-        del data_manager.characters[user_id][char_id]
-        data_manager.save_characters()
-        # Update the view to reflect the deletion
-        if interaction.message.content.startswith("```text\n>> CHARACTER SHEET <<"):
-            # If we're in the character sheet view, go back to the list view
-            char_list = ["```text", ">> YOUR CHARACTERS <<", ""]
-            for cid, char in user_chars.items():
-                if cid != char_id:  # Skip the deleted character
-                    is_primary = cid == primary_id
-                    char_list.append(f"{char.name} ({char.career}){' ★' if is_primary else ''}")
-            char_list.append("Use the buttons below to manage your characters.")
-            char_list.append("```")
-            await interaction.response.edit_message(content='\n'.join(char_list), view=CharacterListView(user_chars, primary_id))
-        else:
-            # If we're in the character list view, update that view
-            await interaction.response.edit_message(content=f"```text\nDeleted character {user_chars[char_id].name}.\n```", view=CharacterListView(user_chars, primary_id))
+    try:
+        if interaction.type == discord.InteractionType.component:
+            custom_id = interaction.data.get("custom_id", "")
+            if custom_id.startswith("delete_"):
+                char_id = custom_id.split("_")[1]
+                user_id = str(interaction.user.id)
+                user_chars = data_manager.get_user_characters(user_id)
+                
+                if char_id in user_chars:
+                    # Store the character name before deletion for the message
+                    char_name = user_chars[char_id].name
+                    # Delete the character
+                    data_manager.delete_character(user_id, char_id)
+                    # Get updated character list
+                    user_chars = data_manager.get_user_characters(user_id)
+                    primary_id = data_manager.primary_characters.get(user_id)
+                    
+                    # First acknowledge the interaction
+                    await interaction.response.defer()
+                    
+                    # Then update the message with the deletion confirmation
+                    await interaction.edit_original_response(
+                        content=f"```text\nDeleted character {char_name}.\n```",
+                        view=CharacterListView(user_chars, primary_id) if user_chars else None
+                    )
+                else:
+                    await interaction.response.send_message("```text\n[ERROR] Character not found.\n```", ephemeral=True)
+    except Exception as e:
+        logger.error(f"Error handling interaction: {e}")
+        # If we haven't responded to the interaction yet, send an error message
+        if not interaction.response.is_done():
+            await interaction.response.send_message("```text\n[ERROR] An error occurred while processing your request.\n```", ephemeral=True)
 
 CAREER_EMOJIS = {
     "Colonial Marine": "🔫",
@@ -1255,7 +1128,7 @@ async def cmd_weapons(interaction: discord.Interaction):
     lines.append(f"{primary.name} | {type_icon} [{primary.damage_type}] | {ammo_icon} [ammo reloads] | 🎲 [{skill} + {attr} + *{mods}]")
     lines.append(f"💥 [damage] {primary.damage} | ✨ [bonus] +{primary.bonus} | 🎯[range]  {primary.range}")
     if primary.lore:
-        lines.append(f'\"{primary.lore}\"')
+        lines.append(f'"{primary.lore}"')
     lines.append("")
     # Other weapons
     if len(char.weapons) > 1:

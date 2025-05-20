@@ -1,10 +1,10 @@
 {
   "characters": {
     "203249116795371520": {
-      "203249116795371520_1": {
-        "Name": "Mister Manager",
-        "Career": "Pilot",
-        "Gender": "Male",
+      "203249116795371520_3": {
+        "Name": "dsfadsf",
+        "Career": "Colonial Marine",
+        "Gender": "Female",
         "Age": 23,
         "Attributes": {
           "Strength": 4,
@@ -14,51 +14,31 @@
         },
         "Skills": {
           "Heavy_Machinery": 1,
-          "Stamina": 0,
-          "Close_Combat": 0,
+          "Stamina": 3,
+          "Close_Combat": 3,
           "Mobility": 0,
-          "Piloting": 3,
+          "Piloting": 0,
           "Ranged_Combat": 3,
           "Observation": 0,
-          "Comtech": 3,
+          "Comtech": 0,
           "Survival": 0,
           "Manipulation": 0,
           "Command": 0,
           "Medical_Aid": 0
         },
-        "Talent": "Full Throttle",
-        "Agenda": "It's about pushing the limit. Taking a chance. Taking risks -- so take a risk.",
+        "Talent": "Banter",
+        "Agenda": "You are a decorated hero, you need to defend your reputation. At all costs.",
         "Inventory": [
           {
-            "name": {
-              "name": {
-                "name": {
-                  "name": {
-                    "name": "IRC MK.50 Compression Suit",
-                    "description": "",
-                    "quantity": 1,
-                    "stackable": true,
-                    "condition": 1,
-                    "price": 0
-                  },
-                  "description": "",
-                  "quantity": 1,
-                  "stackable": true,
-                  "condition": 1,
-                  "price": 0
-                },
-                "description": "",
-                "quantity": 1,
-                "stackable": true,
-                "condition": 1,
-                "price": 0
-              },
-              "description": "",
-              "quantity": 1,
-              "stackable": true,
-              "condition": 1,
-              "price": 0
-            },
+            "name": "M41A Pulse Rifle",
+            "description": "",
+            "quantity": 1,
+            "stackable": true,
+            "condition": 1,
+            "price": 0
+          },
+          {
+            "name": "M314 Motion Tracker",
             "description": "",
             "quantity": 1,
             "stackable": true,
@@ -66,69 +46,49 @@
             "price": 0
           }
         ],
-        "Signature Item": "Dashboard dancer",
+        "Signature Item": "Bullet that you survived",
         "Cash": 600,
         "Loadout": null,
         "Weapons": []
       },
-      "203249116795371520_3": {
-        "Name": "Wally",
-        "Career": "Wildcatter",
-        "Gender": "Female",
+      "203249116795371520_2": {
+        "Name": "Peep Wwaters",
+        "Career": "Colonial Marine",
+        "Gender": "Male",
         "Age": 44,
         "Attributes": {
-          "Strength": 4,
+          "Strength": 5,
           "Agility": 4,
-          "Wits": 4,
+          "Wits": 3,
           "Empathy": 2
         },
         "Skills": {
           "Heavy_Machinery": 1,
-          "Stamina": 0,
-          "Close_Combat": 0,
+          "Stamina": 3,
+          "Close_Combat": 3,
           "Mobility": 0,
-          "Piloting": 3,
-          "Ranged_Combat": 0,
-          "Observation": 3,
+          "Piloting": 0,
+          "Ranged_Combat": 3,
+          "Observation": 0,
           "Comtech": 0,
-          "Survival": 3,
+          "Survival": 0,
           "Manipulation": 0,
           "Command": 0,
           "Medical_Aid": 0
         },
-        "Talent": "The Right Path",
-        "Agenda": "You're tormented by an everlasting itch for things remote, and love to sail forbidden seas.",
+        "Talent": "Banter",
+        "Agenda": "You are a decorated hero, you need to defend your reputation. At all costs.",
         "Inventory": [
           {
-            "name": {
-              "name": {
-                "name": {
-                  "name": {
-                    "name": "Eco All World Survival Suit",
-                    "description": "",
-                    "quantity": 1,
-                    "stackable": true,
-                    "condition": 1,
-                    "price": 0
-                  },
-                  "description": "",
-                  "quantity": 1,
-                  "stackable": true,
-                  "condition": 1,
-                  "price": 0
-                },
-                "description": "",
-                "quantity": 1,
-                "stackable": true,
-                "condition": 1,
-                "price": 0
-              },
-              "description": "",
-              "quantity": 1,
-              "stackable": true,
-              "condition": 1,
-              "price": 0
-            },
+            "name": "M41A Pulse Rifle",
+            "description": "",
+            "quantity": 1,
+            "stackable": true,
+            "condition": 1,
+            "price": 0
+          },
+          {
+            "name": "2 G2 Electroshock Grenades",
             "description": "",
             "quantity": 1,
             "stackable": true,
@@ -136,8 +96,8 @@
             "price": 0
           }
         ],
-        "Signature Item": "A paper notebook and pencil",
-        "Cash": 600,
+        "Signature Item": "Bullet that you survived",
+        "Cash": 500,
         "Loadout": null,
         "Weapons": []
       }
@@ -173,7 +133,21 @@
         "Inventory": [
           {
             "name": {
-              "name": "IRC MK.35 Pressure Suit",
+              "name": {
+                "name": {
+                  "name": "IRC MK.35 Pressure Suit",
+                  "description": "",
+                  "quantity": 1,
+                  "stackable": true,
+                  "condition": 1,
+                  "price": 0
+                },
+                "description": "",
+                "quantity": 1,
+                "stackable": true,
+                "condition": 1,
+                "price": 0
+              },
               "description": "",
               "quantity": 1,
               "stackable": true,
@@ -188,7 +162,21 @@
           },
           {
             "name": {
-              "name": "M41A Pulse Rifle",
+              "name": {
+                "name": {
+                  "name": "M41A Pulse Rifle",
+                  "description": "",
+                  "quantity": 1,
+                  "stackable": true,
+                  "condition": 1,
+                  "price": 0
+                },
+                "description": "",
+                "quantity": 1,
+                "stackable": true,
+                "condition": 1,
+                "price": 0
+              },
               "description": "",
               "quantity": 1,
               "stackable": true,
@@ -239,7 +227,21 @@
         "Inventory": [
           {
             "name": {
-              "name": "IRC MK.50 Compression Suit",
+              "name": {
+                "name": {
+                  "name": "IRC MK.50 Compression Suit",
+                  "description": "",
+                  "quantity": 1,
+                  "stackable": true,
+                  "condition": 1,
+                  "price": 0
+                },
+                "description": "",
+                "quantity": 1,
+                "stackable": true,
+                "condition": 1,
+                "price": 0
+              },
               "description": "",
               "quantity": 1,
               "stackable": true,
@@ -290,7 +292,21 @@
         "Inventory": [
           {
             "name": {
-              "name": "M314 Motion Tracker",
+              "name": {
+                "name": {
+                  "name": "M314 Motion Tracker",
+                  "description": "",
+                  "quantity": 1,
+                  "stackable": true,
+                  "condition": 1,
+                  "price": 0
+                },
+                "description": "",
+                "quantity": 1,
+                "stackable": true,
+                "condition": 1,
+                "price": 0
+              },
               "description": "",
               "quantity": 1,
               "stackable": true,
@@ -305,7 +321,21 @@
           },
           {
             "name": {
-              "name": "Digital video camera",
+              "name": {
+                "name": {
+                  "name": "Digital video camera",
+                  "description": "",
+                  "quantity": 1,
+                  "stackable": true,
+                  "condition": 1,
+                  "price": 0
+                },
+                "description": "",
+                "quantity": 1,
+                "stackable": true,
+                "condition": 1,
+                "price": 0
+              },
               "description": "",
               "quantity": 1,
               "stackable": true,
@@ -353,7 +383,21 @@
         "Agenda": "You want to find an adult you can trust -- really trust.",
         "Inventory": [
           {
-            "name": "Magnet",
+            "name": {
+              "name": {
+                "name": "Magnet",
+                "description": "",
+                "quantity": 1,
+                "stackable": true,
+                "condition": 1,
+                "price": 0
+              },
+              "description": "",
+              "quantity": 1,
+              "stackable": true,
+              "condition": 1,
+              "price": 0
+            },
             "description": "",
             "quantity": 1,
             "stackable": true,
@@ -361,7 +405,21 @@
             "price": 0
           },
           {
-            "name": "Yo-yo",
+            "name": {
+              "name": {
+                "name": "Yo-yo",
+                "description": "",
+                "quantity": 1,
+                "stackable": true,
+                "condition": 1,
+                "price": 0
+              },
+              "description": "",
+              "quantity": 1,
+              "stackable": true,
+              "condition": 1,
+              "price": 0
+            },
             "description": "",
             "quantity": 1,
             "stackable": true,
