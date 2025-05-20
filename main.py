@@ -16,12 +16,22 @@ import copy  # Add at the top with other imports
 import logging
 from models.wearables import all_wearable_items
 from models.weapons import all_weapon_items  # You may need to create this list in weapons.py if not present
-#from models.wearables import WearableLoadout
+from models.wearables import WearableLoadout
 from models.weapon_item import WeaponItem
+from character_creation.utils import (
+    format_attribute_bar, format_skill_bar, get_paired_gear, get_article_for_item, find_wearable_by_name, find_weapon_by_name, handle_dice_roll_item,
+    get_skill_and_attr, get_type_icon, get_ammo_icon, get_modifiers
+)
 
 # Set up logging
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
+
+import datetime
+
+def log_debug(msg: str):
+    ts = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    logger.debug(f"{ts} | {msg}")
 
 # Load environment variables
 load_dotenv()
@@ -41,7 +51,8 @@ def log_event(msg: str):
 # DataManager and related logic moved to data_manager.py
 from data_manager import data_manager
 
-creation_sessions: Dict[str, Dict[str, Character]] = {}
+# Session management moved to character_creation/session.py
+from character_creation.session import creation_sessions
 
 intents = discord.Intents.all()
 bot = commands.Bot(command_prefix="!", intents=intents)
@@ -92,290 +103,14 @@ async def wait_for_user_message(user, *args, **kwargs):
         logger.error(f"Error waiting for user message: {e}")
         raise
 
-async def select_personal_details(user, char_id: str):
-    user_id = str(user.id)
-    logger.debug(f"Starting personal details for user {user_id}, char {char_id}")
-    
-    # Verify we have a valid session
-    if user_id not in creation_sessions or char_id not in creation_sessions[user_id]:
-        logger.error(f"No valid session found for user {user_id}, char {char_id}")
-        await send_dm(user, "```text\n[ERROR] Character creation session lost. Please start over with /createcharacter.\n```")
-        return
-    
-    # Clear any existing session for this character
-    if user_id in creation_sessions and char_id in creation_sessions[user_id]:
-        del creation_sessions[user_id][char_id]
-    
-    # Initialize the character in the session
-    if user_id not in creation_sessions:
-        creation_sessions[user_id] = {}
-    creation_sessions[user_id][char_id] = Character(
-        id=char_id,
-        name="",  # Will be set during creation
-        career="",  # Will be set during creation
-        gender="",
-        age=0,
-        attributes=Attributes(),
-        skills=Skills(),
-        talent="",
-        agenda="",
-        inventory=Inventory(),
-        signature_item="",
-        cash=0
-    )
-    
-    try:
-        await send_dm(user, r"""```text
-                    __                             ___       __  
-   ____  ____  _____/ /__________  ____ ___  ____  / (_)___  / /__
-  / __ \/ __ \/ ___/ __/ ___/ __ \/ __ `__ \/ __ \/ / / __ \/ //_/
- / / / / /_/ (__  ) /_/ /  / /_/ / / / / / / /_/ / / / / / / ,<   
-/_/ /_/\____/____/\__/_/   \____/_/ /_/ /_/\____/_/_/_/ /_/_/|_|          
+from character_creation.steps import (
+    select_personal_details, select_career, start_attr, assign_skills, select_talent, select_agenda, select_gear, select_signature_item, apply_starting_cash_and_finalize, finalize_character, edit_section
+)
 
->>>......USER PRESENCE DETECTED //
->>>......INITIALIZING PERSONNEL INTAKE PROTOCOL //
->>>......CONNECTING TO WEYLAND-YUTANI HUMAN RESOURCE NODE 381-A //
-                  
-```""")
-        
-        await asyncio.sleep(0.3)
-
-        await send_dm(user, r"""```text
- 
-WELCOME USER. //
-
-You will now complete formal submission of self-profile data. /  
-All entries will be retained indefinitely within the Weyland-Yutani Personnel Archive. /
-This process is mandatory. //
-
-This record will define your classification, utility rating, and mission eligibility./  
-Your responses will determine your assignment, compensation scale, and—where applicable—retention priority. //
-
-Emotional and aspirational content is permissible. /  
-Such data will be catalogued for internal analysis, though it will not influence operational assessments. //
-
-You may choose to envision personal purpose. /  
-You may elect to assign meaning to your experiences. /  
-This is allowed—provided such concepts do not interfere with mission objectives. //
-
-It is understood that adventure and fatality are both possible outcomes of your endeavours. /  
-This is of no concern to Weyland-Yutani or any of its corporate subsidiaries, affiliates, or agents. //
-
->>> FAILURE TO COMPLETE THIS PROCESS WILL RESULT IN IMMEDIATE DISQUALIFICATION. //
-
->>>......PREPARING CHARACTER CREATION PROTOCOL //
->>>......AWAITING INITIAL INPUT //
-                  
-```""")
-        
-        await asyncio.sleep(0.3)
-
-        await send_dm(user, r"""```text
-
->>>......CHARACTER CREATION PROTOCOL ONLINE //
->>>......STEP 00: PERSONAL DETAILS //
-
-Before proceeding with career designation, we require basic personal information. /
-This data will be used for identification and record-keeping purposes only. //
-
->>> NOTE:
-All responses must be truthful and accurate. /
-Falsification of records is grounds for immediate termination. //
-                  
-```""")
-        
-        await asyncio.sleep(0.3)
-        
-        # Name input
-        await send_dm(user, """```text
-Enter your character's full name:
-(Only letters, spaces, and hyphens allowed.)
-```""")
-        
-        while True:
-            name_msg = await wait_for_user_message(user)
-            name = name_msg.content.strip()
-            # Accept only letters, spaces, and hyphens
-            if re.match(r'^[A-Za-z\- ]+$', name) and len(name) > 1:
-                creation_sessions[user_id][char_id].name = name
-                break
-            else:
-                await send_dm(user, """```text
-[ERROR] Please enter a valid name using only letters, spaces, and hyphens.
-Try again:
-```""")
-
-        # Gender input
-        await send_dm(user, """```text
-Select your character's gender identity:
-[1] Male
-[2] Female
-[3] Non-binary
-[4] Prefer not to specify
-[5] Other (please specify)
-
-Enter the number of your choice:```""")
-        
-        while True:
-            gender_msg = await wait_for_user_message(user)
-            choice = gender_msg.content.strip()
-            
-            if choice == "1":
-                creation_sessions[user_id][char_id].gender = "Male"
-                break
-            elif choice == "2":
-                creation_sessions[user_id][char_id].gender = "Female"
-                break
-            elif choice == "3":
-                creation_sessions[user_id][char_id].gender = "Non-binary"
-                break
-            elif choice == "4":
-                creation_sessions[user_id][char_id].gender = "Prefer not to specify"
-                break
-            elif choice == "5":
-                await send_dm(user, "```text\nPlease specify your gender identity:```")
-                custom_msg = await wait_for_user_message(user)
-                creation_sessions[user_id][char_id].gender = custom_msg.content.strip()
-                break
-            else:
-                await send_dm(user, "```text\n[ERROR] Please enter a number between 1 and 5```")
-                continue
-
-        # Age input
-        await send_dm(user, "```text\nEnter your character's age (18-120):```")
-        while True:
-            age_msg = await wait_for_user_message(user)
-            try:
-                age = int(age_msg.content.strip())
-                if 18 <= age <= 120:
-                    creation_sessions[user_id][char_id].age = age
-                    break
-                else:
-                    await send_dm(user, "```text\n[ERROR] Age must be between 18 and 120```")
-            except ValueError:
-                await send_dm(user, "```text\n[ERROR] Please enter a valid number```")
-
-        # Confirmation
-        char = creation_sessions[user_id][char_id]
-        await send_dm(user, f"""```text
->> PERSONAL DETAILS SUMMARY <<
-
-Name: {char.name}
-Gender: {char.gender}
-Age: {char.age}
-
-Confirm these details? (Y/N)```""")
-        
-        confirm = await wait_for_user_message(user)
-        if confirm.content.strip().upper() == "Y":
-            logger.debug(f"Personal details confirmed for user {user_id}, char {char_id}")
-            await send_dm(user, "```text\n[OK] Personal details saved. Proceeding to Career Selection...\n```")
-            await asyncio.sleep(0.3)
-            await select_career(user, char_id)
-        else:
-            await send_dm(user, "```text\n[RESET] Let's enter the details again.\n```")
-            await select_personal_details(user, char_id)
-            
-    except Exception as e:
-        logger.error(f"Error in personal details selection: {e}")
-        # Clean up the session
-        if user_id in creation_sessions and char_id in creation_sessions[user_id]:
-            del creation_sessions[user_id][char_id]
-        await send_dm(user, "```text\n[ERROR] Character creation failed. Please try again with /createcharacter.\n```")
-        raise
-
-async def select_career(user, char_id: str):
-    user_id = str(user.id)
-    logger.debug(f"Starting career selection for user {user_id}, char {char_id}")
-    
-    if user_id not in creation_sessions or char_id not in creation_sessions[user_id]:
-        logger.error(f"No character found in session for user {user_id}, char {char_id}")
-        await send_dm(user, "```text\n[ERROR] Character creation session lost. Please start over with /createcharacter.\n```")
-        return
-        
-    char = creation_sessions[user_id][char_id]
-    logger.debug(f"Found character in session: {char.name}")
-    
-    careers = data_manager.get_playergen()["Careers"]
-    career_names = list(careers.keys())
-    
-    def get_menu():
-        menu = "```text\n>> CAREER DESIGNATION <<\n/ Select your corporate classification /\n"
-        for i, cname in enumerate(career_names, 1):
-            menu += f"[{i}] {cname} /\n"
-        menu += "\nCommands:"
-        menu += "\n[dN] View gameplay (d)escription for career N - i.e. d9"
-        menu += "\n[pN] View detailed (p)rofile for career N - i.e. p9"
-        menu += "\n\n> PLEASE PROCEED WITH YOUR SELECTION: [NUMBER] /\n```"
-        return menu
-
-    await send_dm(user, get_menu())
-
-    while True:
-        msg = await wait_for_user_message(user)
-        choice = msg.content.strip()
-        match = re.match(r"^[dp](\d+)$", choice, re.IGNORECASE)
-        if match:
-            idx = int(match.group(1)) - 1
-            if idx < 0 or idx >= len(career_names):
-                await send_dm(user, f"```text\n[ERROR] Invalid career number. Please choose 1-{len(career_names)}\n```")
-                continue
-            cname = career_names[idx]
-            c = careers[cname]
-            if choice.lower().startswith('d'):
-                details = ["```text", f">> CAREER GAMEPLAY: {cname} <<\n"]
-                if 'gameplay_desc' in c:
-                    details.append(c['gameplay_desc'])
-                details.append("\nWould you like to select this career and continue? (Y/N)\n```")
-                await send_dm(user, '\n'.join(details))
-            else:
-                details = ["```text", f">> CAREER PROFILE: {cname} <<\n"]
-                if 'tagline' in c:
-                    details.append(f"Tagline: {c['tagline']}\n")
-                if 'long_description' in c:
-                    details.append(f"Description:\n{c['long_description']}\n")
-                if 'gameplay_desc' in c:
-                    details.append(f"Gameplay:\n{c['gameplay_desc']}\n")
-                details.append(f"Key Attribute: {c['key_attribute']}")
-                details.append(f"Key Skills: {', '.join(c['key_skills'])}")
-                details.append(f"Talents: {', '.join(c['talents'])}")
-                details.append("\nWould you like to select this career and continue? (Y/N)\n```")
-                await send_dm(user, '\n'.join(details))
-            while True:
-                sel = await wait_for_user_message(user)
-                ans = sel.content.strip().upper()
-                if ans == "Y":
-                    creation_sessions[user_id][char_id].career = cname
-                    await send_dm(user, """```text\n[OK] Career selected. Proceeding to Attributes...\n```""")
-                    await asyncio.sleep(0.3)
-                    await start_attr(user, char_id)
-                    return
-                elif ans == "N":
-                    await send_dm(user, get_menu())
-                    break
-                else:
-                    await send_dm(user, "```text\n[ERROR] Please reply Y or N.\n```")
-            continue
-        if choice.isdigit() and 1 <= int(choice) <= len(career_names):
-            cname = career_names[int(choice)-1]
-            creation_sessions[user_id][char_id].career = cname
-            await send_dm(user, f"""```text\n[OK] Career selected: {cname}. Proceeding to Attributes...\n```""")
-            await asyncio.sleep(0.3)
-            await start_attr(user, char_id)
-            return
-        await send_dm(user, "```text\n[ERROR] Invalid input. Enter a number, dN, or pN.\n```")
-
-def format_attribute_bar(value, is_key=False):
-    stars = " " + " ".join("*" * value)  
-    spaces = " " * (11 - len(stars))
-    if is_key:
-        return f"{{{stars}{spaces}}}" 
-    return f"[{stars}{spaces}]"
-
-def format_skill_bar(value):
-    stars = " " + " ".join("*" * value)
-    spaces = " " * (11 - len(stars))  
-    return f"[{stars}{spaces}]"
+from character_creation.utils import (
+    format_attribute_bar, format_skill_bar, get_paired_gear, get_article_for_item, find_wearable_by_name, find_weapon_by_name, handle_dice_roll_item,
+    get_skill_and_attr, get_type_icon, get_ammo_icon, get_modifiers
+)
 
 async def start_attr(user, char_id: str):
     user_id = str(user.id)
@@ -854,291 +589,6 @@ def find_weapon_by_name(name):
             return item
     return None
 
-# --- Update select_gear ---
-async def select_gear(user_id, char_id: str):
-    user = await bot.fetch_user(int(user_id))
-    careers = data_manager.get_playergen()["Careers"]
-    if user_id not in creation_sessions or char_id not in creation_sessions[user_id]:
-        await send_dm(user, "```text\n[ERROR] No career found in session. Please start over with /createcharacter.\n```")
-        return
-    char = creation_sessions[user_id][char_id]
-    gear_list = careers[char.career]["starting_gear"]
-    gear_pairs = get_paired_gear(gear_list)
-    menu = ["```text", ">> GEAR SELECTION <<"]
-    menu.append(f"Select your first piece of gear for your {char.career}.")
-    menu.append("\nAvailable gear:")
-    for i, item in enumerate(gear_list, 1):
-        menu.append(f"[{i}] {item}")
-    menu.append("\nEnter the number of your chosen gear:```")
-    
-    while True:
-        await send_dm(user, '\n'.join(menu))
-        msg = await wait_for_user_message(user)
-        
-        if not msg.content.isdigit():
-            await send_dm(user, "[ERROR] Please enter a number")
-            continue
-            
-        choice = int(msg.content)
-        if choice < 1 or choice > len(gear_list):
-            await send_dm(user, f"[ERROR] Please enter a number between 1 and {len(gear_list)}")
-            continue            
-            
-        first_item = gear_list[choice - 1]
-        item_name, quantity = handle_dice_roll_item(first_item)
-        
-        if 'doses' in first_item.lower() or 'rounds' in first_item.lower():
-            char.inventory.add_item(ConsumableItem(
-                name=item_name,
-                quantity=quantity
-            ))
-        else:
-            char.inventory.add_item(Item(name=item_name))
-        
-        # Find which pair the first item belongs to
-        first_pair_index = (choice - 1) // 2
-        first_pair = gear_pairs[first_pair_index]
-        
-        remaining_gear = []
-        for i, item in enumerate(gear_list):
-            if item == first_item:
-                continue
-            # Skip the paired item
-            if item in first_pair:
-                continue
-            remaining_gear.append(item)
-        
-        menu = ["```text", ">> GEAR SELECTION <<"]
-        menu.append(f"You have selected {get_article_for_item(first_item)} as your first item. Please select the second piece of gear for your {char.career}.")
-        menu.append(f"\nNOTE: Because you have selected {get_article_for_item(first_item)}, you are precluded via game rules from also selecting {get_article_for_item(first_pair[0] if first_item == first_pair[1] else first_pair[1])}, which has been removed from the list of remaining selectable items below.")
-        menu.append("\nAvailable gear:")
-        for i, item in enumerate(remaining_gear, 1):
-            menu.append(f"[{i}] {item}")
-        menu.append("\nEnter the number of your chosen gear:```")
-        
-        while True:
-            await send_dm(user, '\n'.join(menu))
-            msg = await wait_for_user_message(user)
-            if not msg.content.isdigit():
-                await send_dm(user, "[ERROR] Please enter a number")
-                continue
-            choice = int(msg.content)
-            if choice < 1 or choice > len(remaining_gear):
-                await send_dm(user, f"[ERROR] Please enter a number between 1 and {len(remaining_gear)}")
-                continue
-            second_item = remaining_gear[choice - 1]
-            item_name, quantity = handle_dice_roll_item(second_item)
-            if 'doses' in second_item.lower() or 'rounds' in second_item.lower():
-                char.inventory.add_item(ConsumableItem(
-                    name=item_name,
-                    quantity=quantity
-                ))
-            else:
-                char.inventory.add_item(Item(name=item_name))
-            await send_dm(user, f"""```text
->> SELECTED GEAR <<
-1. {first_item}
-2. {second_item}
-
-Confirm these selections? (Y/N)```""")
-            
-            confirm = await wait_for_user_message(user)
-            if confirm.content.strip().upper() == "Y":
-                await send_dm(user, "[OK] Gear saved. Proceeding to Signature Item...")
-                await select_signature_item(user_id, char_id)
-                return
-            else:
-                await send_dm(user, "[RESET] Let's select gear again.")
-                char.inventory = Inventory()
-                break
-
-async def select_signature_item(user_id, char_id: str):
-    user = await bot.fetch_user(int(user_id))
-    careers = data_manager.get_playergen()["Careers"]
-    
-    if user_id not in creation_sessions or char_id not in creation_sessions[user_id]:
-        await send_dm(user, "```text\n[ERROR] No career found in session. Please start over with /createcharacter.\n```")
-        return
-        
-    char = creation_sessions[user_id][char_id]
-    items = careers[char.career]["signature_items"]
-    
-    menu = ["```text", ">> SIGNATURE ITEM <<"]
-    menu.append(f"Select a signature item for your {char.career}:")
-    menu.append("\nAvailable items:")
-    for i, item in enumerate(items, 1):
-        menu.append(f"[{i}] {item}")
-    menu.append("\nEnter the number of your chosen item:```")
-    
-    while True:
-        await send_dm(user, '\n'.join(menu))
-        msg = await wait_for_user_message(user)
-        
-        if not msg.content.isdigit():
-            await send_dm(user, "[ERROR] Please enter a number")
-            continue
-            
-        choice = int(msg.content)
-        if choice < 1 or choice > len(items):
-            await send_dm(user, f"[ERROR] Please enter a number between 1 and {len(items)}")
-            continue
-            
-        selected = items[choice - 1]
-        char.signature_item = selected
-        await send_dm(user, "[OK] Signature Item saved. Proceeding to Cash...")
-        # Immediately apply cash and proceed to final review
-        await apply_starting_cash_and_finalize(user_id, char_id)
-        return
-
-async def apply_starting_cash_and_finalize(user_id, char_id: str):
-    user = await bot.fetch_user(int(user_id))
-    careers = data_manager.get_playergen()["Careers"]
-    char = creation_sessions[user_id][char_id]
-    formula = careers[char.career]["cash"]
-    amt = DiceRoll.roll(formula)
-    char.cash = amt
-    await send_dm(user, "[OK] Cash assigned. Proceeding to final review...")
-    await finalize_character(user_id, char_id, finalstep=True)
-
-async def finalize_character(user_id, char_id: str, finalstep=False):
-    user = await bot.fetch_user(int(user_id))
-    if user_id not in creation_sessions or char_id not in creation_sessions[user_id]:
-        await send_dm(user, "```text\n[ERROR] No character in progress. Please start over with /createcharacter.\n```")
-        return
-    char = creation_sessions[user_id][char_id]
-    while True:
-        summary = ["```text", ">> CHARACTER SUMMARY <<"]
-        summary.append("\nPlease review...")
-        summary.append(f"\n[A] Character: {char.name}, {char.gender}, {char.age}")
-        summary.append(f"\n[B] Career: {char.career}")
-        summary.append(f"\n[C] Talent: {char.talent}")
-        summary.append(f"\n[D] Agenda: {char.agenda}")
-        summary.append(" \n[E] Attributes:")
-        for attr in ["Strength", "Agility", "Wits", "Empathy"]:
-            value = getattr(char.attributes, attr.lower())
-            summary.append(f"  {attr}: {value}")
-        summary.append("\n[F] Skills:")
-        for skill_name, value in char.skills.__dict__.items():
-            if value > 0:
-                summary.append(f"  {skill_name.replace('_', ' ').title()}: {value}")
-        summary.append(f"\n[G] Gear:")
-        for item in char.inventory.items:
-            if isinstance(item, ConsumableItem):
-                form = getattr(item, 'form', 'unit')
-                form_plural = getattr(item, 'form_plural', 'units')
-                summary.append(f"  • {item.name} (x{item.quantity} {form if item.quantity == 1 else form_plural})")
-            else:
-                summary.append(f"  • {str(item)}")
-        summary.append(f"  • Cash: ${char.cash}")
-        summary.append(f"\n[H] Signature Item: {char.signature_item}")
-        summary.append("\nOptions:")
-        summary.append("[1] CONFIRM - Lock in character")
-        summary.append("[0] RESTART - Purge this sheet, start over at the beginning.")
-        summary.append("\nEnter any letter to return to that section and make changes.")
-        summary.append("```")
-        await send_dm(user, '\n'.join(summary))
-        msg = await wait_for_user_message(user)
-        choice = msg.content.strip().upper()
-        if choice == "1":
-            logger.debug(f"Saving character {char.name} for user {user_id}")
-            if user_id not in data_manager.characters:
-                data_manager.characters[user_id] = {}
-            # --- PATCH START: Move weapons from inventory to weapons list ---
-            weapon_names = {w.name for w in all_weapon_items}
-            new_inventory = []
-            for item in char.inventory.items:
-                if item.name in weapon_names:
-                    # Convert to WeaponItem if not already
-                    if not isinstance(item, WeaponItem):
-                        canonical = next((w for w in all_weapon_items if w.name == item.name), None)
-                        if canonical:
-                            char.weapons.append(canonical)
-                        else:
-                            char.weapons.append(WeaponItem(name=item.name))
-                    else:
-                        char.weapons.append(item)
-                else:
-                    new_inventory.append(item)
-            char.inventory.items = new_inventory
-            # --- PATCH END ---
-            data_manager.characters[user_id][char_id] = char
-            
-            # Check if this is the user's first character
-            if not data_manager.primary_characters.get(user_id):
-                logger.debug(f"Setting {char.name} as primary character for user {user_id}")
-                data_manager.primary_characters[user_id] = char_id
-                
-                # Find a guild where both the bot and user are present
-                for guild in bot.guilds:
-                    member = guild.get_member(user.id)
-                    if member:
-                        logger.debug(f"Found user in guild {guild.id}, attempting to update roles")
-                        success, message = await update_user_roles_and_nickname(
-                            user,
-                            char,
-                            guild
-                        )
-                        if success:
-                            await user.send(f"```text\n[OK] {message}\n```")
-                        else:
-                            await user.send(f"```text\n[WARNING] {message}\n```")
-                        break
-            else:
-                # Ask if they want to make this their primary character
-                await send_dm(user, f"""```text
-Would you like to make {char.name} your primary character? This will update your Discord role.
-(Y/N)```""")
-                primary_choice = await wait_for_user_message(user)
-                if primary_choice.content.strip().upper() == "Y":
-                    # Update primary character
-                    data_manager.primary_characters[user_id] = char_id
-                    # Update roles in all guilds where both bot and user are present
-                    for guild in bot.guilds:
-                        member = guild.get_member(user.id)
-                        if member:
-                            success, message = await update_user_roles_and_nickname(
-                                user,
-                                char,
-                                guild
-                            )
-                            if success:
-                                await user.send(f"```text\n[OK] {message}\n```")
-                            else:
-                                await user.send(f"```text\n[WARNING] {message}\n```")
-            
-            data_manager.save_characters()
-            logger.debug(f"Characters after save: {data_manager.characters}")
-            logger.debug(f"Primary characters after save: {data_manager.primary_characters}")
-            
-            del creation_sessions[user_id][char_id]
-            await send_dm(user, """```text\n[OK] Character creation complete!\nYour character has been saved and is ready for use.\n```""")
-            log_event(f"Character created: {char.name} (User: {user_id}, Char: {char_id})")
-            return
-        elif choice == "0":
-            await send_dm(user, """```text\nAre you sure you want to restart character creation? This will erase all progress. (Y/N)\n```""")
-            confirm = await wait_for_user_message(user)
-            if confirm.content.strip().upper() == "Y":
-                del creation_sessions[user_id][char_id]
-                await send_dm(user, """```text\n[RESET] Starting character creation over...\n```""")
-                await select_career(user, char_id)
-                return
-            else:
-                continue
-        elif finalstep and choice in ["A", "B", "C", "D", "E", "F", "G", "H"]:
-            # Call the appropriate edit function for the section, then return to summary
-            await edit_section(user_id, char_id, choice)
-            continue
-        else:
-            await send_dm(user, "```text\n[ERROR] Please enter a valid option.\n```")
-            continue
-
-# Placeholder for section editing logic
-async def edit_section(user_id, char_id, section):
-    user = await bot.fetch_user(int(user_id))
-    # Implement section-specific editing logic here
-    await send_dm(user, f"```text\n[EDIT] Section {section} editing not yet implemented. Returning to summary...\n```")
-    return
-
 @bot.tree.command(name="createcharacter", description="Begin character creation.")
 async def cmd_create(interaction: discord.Interaction):
     user = interaction.user
@@ -1156,7 +606,7 @@ async def cmd_create(interaction: discord.Interaction):
     
     # Generate a unique character ID
     char_id = f"{user.id}_{len(user_chars) + 1}"
-    logger.debug(f"Starting character creation for user {user_id}, char {char_id}")
+    log_debug(f"Start char creation: user {user_id}, char {char_id}")
     
     # Initialize the user's session
     if user_id not in creation_sessions:
@@ -1188,7 +638,7 @@ async def cmd_create(interaction: discord.Interaction):
     )
     
     try:
-        await select_personal_details(user, char_id)
+        await select_personal_details(user, char_id, send_dm, wait_for_user_message, creation_sessions, logger)
     except Exception as e:
         logger.error(f"Error in character creation: {e}")
         # Clean up the session
@@ -1200,12 +650,12 @@ async def cmd_create(interaction: discord.Interaction):
 async def cmd_sheet(interaction: discord.Interaction):
     user = interaction.user
     user_id = str(user.id)
-    logger.debug(f"Sheet command called by user {user_id}")
-    logger.debug(f"All characters: {data_manager.characters}")
-    logger.debug(f"Primary characters: {data_manager.primary_characters}")
+    log_debug(f"Sheet command by user {user_id}")
+    log_debug(f"User {user_id} characters: {[c.name for c in data_manager.get_user_characters(user_id).values()]}")
+    log_debug(f"Primary chars: {[data_manager.get_user_characters(uid)[cid].name for uid, cid in data_manager.primary_characters.items() if cid in data_manager.get_user_characters(uid)]}")
     
     char = data_manager.get_primary_character(user_id)
-    logger.debug(f"Found primary character: {char}")
+    log_debug(f"Primary char: {char.name if char else 'None'}")
     
     if not char:
         await interaction.response.send_message("```text\n[ERROR] No character sheet found.\n```", ephemeral=True)
@@ -1456,13 +906,31 @@ async def on_interaction(interaction: discord.Interaction):
         if not char.weapons:
             await interaction.response.edit_message(content="```text\n[WEAPONS]\nNo weapons equipped.\n```", view=CharacterSheetView(user_chars, primary_id, char_id, "weapons"))
             return
-        lines = ["```text", ">> WEAPONS <<"]
-        for weapon in char.weapons:
-            lines.append(f"• {weapon.name}")
-            if hasattr(weapon, 'damage'):
-                lines.append(f"  Damage: {weapon.damage}")
-            if hasattr(weapon, 'range'):
-                lines.append(f"  Range: {weapon.range}")
+        lines = ["```text", ">> WEAPONS <<\n"]
+        # Primary weapon is the first in the list
+        primary = char.weapons[0]
+        skill, attr = get_skill_and_attr(primary)
+        type_icon = get_type_icon(primary)
+        ammo_icon = get_ammo_icon(primary)
+        mods = get_modifiers(primary)
+        lines.append("Primary Weapon")
+        lines.append(f"{primary.name} | {type_icon} [{primary.damage_type}] | {ammo_icon} [ammo reloads] | 🎲 [{skill} + {attr} + *{mods}]")
+        lines.append(f"💥 [damage] {primary.damage} | ✨ [bonus] +{primary.bonus} | 🎯[range]  {primary.range}")
+        if primary.lore:
+            lines.append(f'"{primary.lore}"')
+        lines.append("")
+        # Other weapons
+        if len(char.weapons) > 1:
+            lines.append("Other Weapons:")
+            for i, weapon in enumerate(char.weapons[1:], 1):
+                lines.append(f"{i}. {weapon.name}")
+            lines.append("")
+            lines.append("Options:")
+            for i, weapon in enumerate(char.weapons[1:], 1):
+                lines.append(f"[{i}] Switch to {weapon.name}")
+            lines.append(f"[I] More info about primary weapon")
+            for i, weapon in enumerate(char.weapons[1:], 1):
+                lines.append(f"[I{i}] More info about {weapon.name}")
         lines.append("```")
         await interaction.response.edit_message(content='\n'.join(lines), view=CharacterSheetView(user_chars, primary_id, char_id, "weapons"))
     elif custom_id.startswith("loadout_"):
@@ -1471,7 +939,7 @@ async def on_interaction(interaction: discord.Interaction):
         if not char:
             await interaction.response.edit_message(content="```text\n[ERROR] Character not found.\n```", view=CharacterSheetView(user_chars, primary_id, char_id, "loadout"))
             return
-        if not char.loadout:
+        if not char.loadout or not (char.loadout.suit or char.loadout.clothing or char.loadout.armor or char.loadout.accessories):
             await interaction.response.edit_message(content="```text\n[LOADOUT]\nNo wearables equipped.\n```", view=CharacterSheetView(user_chars, primary_id, char_id, "loadout"))
             return
         lines = ["```text"]
@@ -1521,7 +989,6 @@ async def on_interaction(interaction: discord.Interaction):
             # If we're in the character list view, update that view
             await interaction.response.edit_message(content=f"```text\nDeleted character {user_chars[char_id].name}.\n```", view=CharacterListView(user_chars, primary_id))
 
-# Career to emoji mapping
 CAREER_EMOJIS = {
     "Colonial Marine": "🔫",
     "Colonial Marshal": "⭐",
@@ -1557,7 +1024,7 @@ async def update_user_roles_and_nickname(user: discord.User, character: Characte
                     hoist=True,
                     mentionable=False
                 )
-                logger.debug(f"Created new role: {role_name}")
+                log_debug(f"Created role: {role_name}")
             except discord.Forbidden:
                 return False, f"Bot lacks permission to create role {role_name}"
             except discord.HTTPException as e:
@@ -1571,7 +1038,7 @@ async def update_user_roles_and_nickname(user: discord.User, character: Characte
         # Add the new career role
         try:
             await member.add_roles(career_role)
-            logger.debug(f"Added role {career_role.name} to user {user.name}")
+            log_debug(f"Added role {career_role.name} to user {user.name}")
         except discord.Forbidden:
             return False, f"Bot lacks permission to add role {career_role.name}"
         except discord.HTTPException as e:
@@ -1588,7 +1055,7 @@ async def update_user_roles_and_nickname(user: discord.User, character: Characte
                     new_nickname = f"{emoji} {character.name[:max_name_length]}"
                 
                 await member.edit(nick=new_nickname)
-                logger.debug(f"Updated nickname to {new_nickname} for user {user.name}")
+                log_debug(f"Updated nickname to {new_nickname} for user {user.name}")
             except discord.Forbidden:
                 return False, f"Bot lacks permission to update nickname for {user.name}"
             except discord.HTTPException as e:
@@ -1616,7 +1083,7 @@ async def remove_character_roles(user: discord.User, guild: discord.Guild) -> Tu
             if role in member.roles:
                 try:
                     await member.remove_roles(role)
-                    logger.debug(f"Removed role {role.name} from user {user.name}")
+                    log_debug(f"Removed role {role.name} from user {user.name}")
                 except discord.Forbidden:
                     return False, f"Bot lacks permission to remove role {role.name}"
                 except discord.HTTPException as e:
@@ -1755,7 +1222,7 @@ async def cmd_loadout(interaction: discord.Interaction):
     if not char:
         await interaction.response.send_message("```text\n[ERROR] No character sheet found.\n```", ephemeral=True)
         return
-    if not char.loadout:
+    if not char.loadout or not (char.loadout.suit or char.loadout.clothing or char.loadout.armor or char.loadout.accessories):
         await interaction.response.send_message("```text\n[LOADOUT]\nNo wearables equipped.\n```", ephemeral=True)
         return
     # Use the WearableLoadout display method
@@ -1776,55 +1243,6 @@ async def cmd_weapons(interaction: discord.Interaction):
         await interaction.response.send_message("```text\n[WEAPONS]\nNo weapons equipped.\n```", ephemeral=True)
         return
 
-    # Helper: get skill and attribute for weapon
-    def get_skill_and_attr(weapon):
-        if weapon.weapon_class in ["pistol", "rifle", "heavy", "launcher", "grenade", "ammunition", "chemical"]:
-            return "Ranged Combat", "Agility"
-        elif weapon.weapon_class in ["melee"]:
-            return "Close Combat", "Strength"
-        else:
-            return "Ranged Combat", "Agility"
-
-    # Helper: get type icon
-    def get_type_icon(weapon):
-        type_map = {
-            "ballistic": "🏹",
-            "energy": "⚡",
-            "melee": "🗡️",
-            "fire": "🔥",
-            "blast": "💣",
-            "stun": "💫",
-            "piercing": "🗡️",
-            "impact": "🔨",
-            "chemical": "☣️",
-            "special": "✨",
-            "kinetic": "🔫",
-            "physical": "🛡️"
-        }
-        return type_map.get(weapon.damage_type, "🔪")
-
-    # Helper: ammo/reload icon
-    def get_ammo_icon(weapon):
-        if getattr(weapon, "uses_ammo", False):
-            return "🧱🧱🧱"  # Placeholder: could show actual ammo count if tracked
-        elif getattr(weapon, "power_supply", None):
-            return f"🔋{weapon.power_supply}"
-        elif getattr(weapon, "single_shot", False):
-            return "🧱 (reloads after each shot)"
-        else:
-            return "∞"
-
-    # Helper: modifiers (placeholder, can be expanded)
-    def get_modifiers(weapon):
-        mods = []
-        if getattr(weapon, "armor_effect", None):
-            mods.append(weapon.armor_effect.replace("_", " ").title())
-        if getattr(weapon, "full_auto", False):
-            mods.append("Full Auto")
-        if getattr(weapon, "special_effect", None):
-            mods.append(weapon.special_effect)
-        return ", ".join(mods) if mods else "None"
-
     # --- Display ---
     lines = ["```text", ">> WEAPONS <<\n"]
     # Primary weapon is the first in the list
@@ -1837,7 +1255,7 @@ async def cmd_weapons(interaction: discord.Interaction):
     lines.append(f"{primary.name} | {type_icon} [{primary.damage_type}] | {ammo_icon} [ammo reloads] | 🎲 [{skill} + {attr} + *{mods}]")
     lines.append(f"💥 [damage] {primary.damage} | ✨ [bonus] +{primary.bonus} | 🎯[range]  {primary.range}")
     if primary.lore:
-        lines.append(f'"{primary.lore}"')
+        lines.append(f'\"{primary.lore}\"')
     lines.append("")
     # Other weapons
     if len(char.weapons) > 1:

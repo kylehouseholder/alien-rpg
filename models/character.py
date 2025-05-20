@@ -3,7 +3,7 @@ from dataclasses import dataclass, field
 from .items import Inventory, Item, ConsumableItem, ClothingItem, ArmorItem, SuitItem, AccessoryItem
 from .dice import DiceRoll
 from .weapon_item import WeaponItem
-#from .wearables import WearableLoadout
+from .wearables import WearableLoadout
 
 @dataclass
 class Attributes:
@@ -42,7 +42,7 @@ class Character:
     inventory: Inventory = field(default_factory=Inventory)
     signature_item: str = ""
     cash: int = 0
-    #loadout: Optional[WearableLoadout] = None  # Equipped wearables
+    loadout: Optional[WearableLoadout] = None  # Equipped wearables
     weapons: List[WeaponItem] = field(default_factory=list)  # Equipped weapons
     
     @classmethod
@@ -57,7 +57,7 @@ class Character:
             attributes=Attributes(),
             skills=Skills(),
             inventory=Inventory(),
-            #loadout=WearableLoadout(),
+            loadout=WearableLoadout(),
             weapons=[]
         )
     
@@ -74,7 +74,7 @@ class Character:
             attributes=Attributes(),
             skills=Skills(),
             inventory=Inventory(),
-            #loadout=WearableLoadout(),
+            loadout=WearableLoadout(),
             weapons=[]
         )
         
@@ -131,9 +131,8 @@ class Character:
                         char.inventory.add_item(Item(name=name))
                         
         # Load loadout and weapons if present
-        if 'Loadout' in data:
-            # TODO: implement WearableLoadout.from_dict if needed
-            pass
+        if 'Loadout' in data and data['Loadout']:
+            char.loadout = WearableLoadout.from_dict(data['Loadout'])
         if 'Weapons' in data:
             # TODO: implement weapon loading if needed
             pass
@@ -146,12 +145,7 @@ class Character:
         def serialize_loadout(loadout):
             if not loadout:
                 return None
-            return {
-                'clothing': vars(loadout.clothing) if loadout.clothing else None,
-                'armor': [vars(a) for a in loadout.armor],
-                'suit': vars(loadout.suit) if loadout.suit else None,
-                'accessories': [vars(a) for a in loadout.accessories]
-            }
+            return loadout.to_dict()
         # Helper to serialize weapons
         def serialize_weapons(weapons):
             return [vars(w) for w in weapons]

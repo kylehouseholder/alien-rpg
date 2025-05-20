@@ -1,6 +1,7 @@
 from .items import ArmorItem, SuitItem, ClothingItem, AccessoryItem
 from models.items import Item, ConsumableItem, Inventory
 from models.weapon_item import WeaponItem
+from typing import Optional, List
 
 # --- Clothing ---
 bdus = ClothingItem(
@@ -374,4 +375,58 @@ all_wearable_items = [
     m3b_standard_boots,
     m7_jungle_boots,
     m7a_dry_boots
-] 
+]
+
+class WearableLoadout:
+    """Represents a character's equipped wearables: clothing, armor, suit, accessories."""
+    def __init__(self, clothing: Optional[ClothingItem] = None, armor: Optional[List[ArmorItem]] = None, suit: Optional[SuitItem] = None, accessories: Optional[List[AccessoryItem]] = None):
+        self.clothing = clothing
+        self.armor = armor if armor is not None else []
+        self.suit = suit
+        self.accessories = accessories if accessories is not None else []
+
+    def display_loadout(self) -> str:
+        lines = ["[LOADOUT]"]
+        if self.suit:
+            lines.append(f"Suit: {self.suit.name}")
+        if self.clothing:
+            lines.append(f"Clothing: {self.clothing.name}")
+        if self.armor:
+            for a in self.armor:
+                lines.append(f"Armor: {a.name}")
+        if self.accessories:
+            for acc in self.accessories:
+                lines.append(f"Accessory: {acc.name}")
+        if not (self.suit or self.clothing or self.armor or self.accessories):
+            lines.append("No wearables equipped.")
+        return "\n".join(lines)
+
+    def to_dict(self):
+        return {
+            'clothing': self.clothing.name if self.clothing else None,
+            'armor': [a.name for a in self.armor],
+            'suit': self.suit.name if self.suit else None,
+            'accessories': [a.name for a in self.accessories],
+        }
+
+    @classmethod
+    def from_dict(cls, data, all_items=None):
+        # all_items: list of all wearable items to match by name
+        clothing = None
+        armor = []
+        suit = None
+        accessories = []
+        if not all_items:
+            from .wearables import all_wearable_items
+            all_items = all_wearable_items
+        if data.get('clothing'):
+            clothing = next((i for i in all_items if i.name == data['clothing']), None)
+        if data.get('armor'):
+            armor = [next((i for i in all_items if i.name == n), None) for n in data['armor']]
+            armor = [a for a in armor if a]
+        if data.get('suit'):
+            suit = next((i for i in all_items if i.name == data['suit']), None)
+        if data.get('accessories'):
+            accessories = [next((i for i in all_items if i.name == n), None) for n in data['accessories']]
+            accessories = [a for a in accessories if a]
+        return cls(clothing=clothing, armor=armor, suit=suit, accessories=accessories) 

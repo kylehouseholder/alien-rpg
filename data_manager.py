@@ -18,8 +18,9 @@ logger = logging.getLogger(__name__)
 LOG_PATH = os.path.join(os.path.dirname(__file__), "scripts", "bot.log")
 
 def log_event(msg: str):
+    ts = datetime.datetime.now().strftime("[%Y-%m-%d %H:%M:%S]")
+    logger.info(f"{ts} {msg}")
     with open(LOG_PATH, "a") as f:
-        ts = datetime.datetime.now().strftime("[%Y-%m-%d %H:%M:%S]")
         f.write(f"{ts} [EVENT   ] {msg}\n")
 
 class DataManager:
@@ -37,11 +38,13 @@ class DataManager:
         self.reload_all()
     
     def reload_all(self):
+        logger.info(f"[{datetime.datetime.now()}] Reloading all data files.")
         self.reload_characters()
         self.reload_playergen()
     
     def reload_characters(self):
         try:
+            logger.info(f"[{datetime.datetime.now()}] Loading characters from {os.path.abspath(self.CHARACTER_FILE)}")
             with open(self.CHARACTER_FILE, "r") as f:
                 data = json.load(f)
                 self.primary_characters = data.get("primary_characters", {})
@@ -91,16 +94,17 @@ class DataManager:
                         )
                         self.characters[user_id][char_id] = char
         except Exception as e:
-            print(f"Error loading characters file: {e}")
+            logger.error(f"[{datetime.datetime.now()}] Error loading characters file: {e}")
             self.characters = {}
             self.primary_characters = {}
     
     def reload_playergen(self):
         try:
+            logger.info(f"[{datetime.datetime.now()}] Loading playergen from {os.path.abspath(self.PLAYERGEN_FILE)}")
             with open(self.PLAYERGEN_FILE, "r") as f:
                 self.playergen = json.load(f)
         except Exception as e:
-            print(f"Error loading playergen: {e}")
+            logger.error(f"[{datetime.datetime.now()}] Error loading playergen: {e}")
             self.playergen = {}
     
     def get_playergen(self) -> Dict:
@@ -109,6 +113,9 @@ class DataManager:
     
     def save_characters(self):
         try:
+            abs_path = os.path.abspath(self.CHARACTER_FILE)
+            ts = datetime.datetime.now().strftime("[%Y-%m-%d %H:%M:%S]")
+            logger.info(f"{ts} Saving characters to {abs_path}")
             data = {
                 "characters": {
                     user_id: {
@@ -121,8 +128,9 @@ class DataManager:
             }
             with open(self.CHARACTER_FILE, "w") as f:
                 json.dump(data, f, indent=2)
+            logger.info(f"{ts} Successfully saved characters to {abs_path}")
         except Exception as e:
-            print(f"Error saving characters: {e}")
+            logger.error(f"[{datetime.datetime.now()}] Error saving characters: {e}")
     
     def get_characters(self) -> Dict[str, Dict[str, Character]]:
         return self.characters

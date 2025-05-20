@@ -33,7 +33,14 @@
             "name": {
               "name": {
                 "name": {
-                  "name": "IRC MK.50 Compression Suit",
+                  "name": {
+                    "name": "IRC MK.50 Compression Suit",
+                    "description": "",
+                    "quantity": 1,
+                    "stackable": true,
+                    "condition": 1,
+                    "price": 0
+                  },
                   "description": "",
                   "quantity": 1,
                   "stackable": true,
@@ -64,7 +71,7 @@
         "Loadout": null,
         "Weapons": []
       },
-      "203249116795371520_2": {
+      "203249116795371520_3": {
         "Name": "Wally",
         "Career": "Wildcatter",
         "Gender": "Female",
@@ -96,7 +103,14 @@
             "name": {
               "name": {
                 "name": {
-                  "name": "Eco All World Survival Suit",
+                  "name": {
+                    "name": "Eco All World Survival Suit",
+                    "description": "",
+                    "quantity": 1,
+                    "stackable": true,
+                    "condition": 1,
+                    "price": 0
+                  },
                   "description": "",
                   "quantity": 1,
                   "stackable": true,
@@ -124,56 +138,6 @@
         ],
         "Signature Item": "A paper notebook and pencil",
         "Cash": 600,
-        "Loadout": null,
-        "Weapons": []
-      },
-      "203249116795371520_3": {
-        "Name": "Fart Barfunkel",
-        "Career": "Scientist",
-        "Gender": "Male",
-        "Age": 34,
-        "Attributes": {
-          "Strength": 2,
-          "Agility": 3,
-          "Wits": 5,
-          "Empathy": 4
-        },
-        "Skills": {
-          "Heavy_Machinery": 0,
-          "Stamina": 1,
-          "Close_Combat": 0,
-          "Mobility": 0,
-          "Piloting": 0,
-          "Ranged_Combat": 1,
-          "Observation": 3,
-          "Comtech": 2,
-          "Survival": 1,
-          "Manipulation": 1,
-          "Command": 0,
-          "Medical_Aid": 1
-        },
-        "Talent": "Inquisitive",
-        "Agenda": "You find it hard to delegate to others, even if it means taking on extra work.",
-        "Inventory": [
-          {
-            "name": "M314 Motion Tracker",
-            "description": "",
-            "quantity": 1,
-            "stackable": true,
-            "condition": 1,
-            "price": 0
-          },
-          {
-            "name": "Digital video camera",
-            "description": "",
-            "quantity": 1,
-            "stackable": true,
-            "condition": 1,
-            "price": 0
-          }
-        ],
-        "Signature Item": "Albert Einstein Award",
-        "Cash": 400,
         "Loadout": null,
         "Weapons": []
       }
@@ -208,7 +172,14 @@
         "Agenda": "You are a decorated hero, you need to defend your reputation. At all costs.",
         "Inventory": [
           {
-            "name": "IRC MK.35 Pressure Suit",
+            "name": {
+              "name": "IRC MK.35 Pressure Suit",
+              "description": "",
+              "quantity": 1,
+              "stackable": true,
+              "condition": 1,
+              "price": 0
+            },
             "description": "",
             "quantity": 1,
             "stackable": true,
@@ -216,7 +187,14 @@
             "price": 0
           },
           {
-            "name": "M41A Pulse Rifle",
+            "name": {
+              "name": "M41A Pulse Rifle",
+              "description": "",
+              "quantity": 1,
+              "stackable": true,
+              "condition": 1,
+              "price": 0
+            },
             "description": "",
             "quantity": 1,
             "stackable": true,
@@ -260,7 +238,14 @@
         "Agenda": "You once sacrificed your family for the job. Now you won't let your friends down -- ever.",
         "Inventory": [
           {
-            "name": "IRC MK.50 Compression Suit",
+            "name": {
+              "name": "IRC MK.50 Compression Suit",
+              "description": "",
+              "quantity": 1,
+              "stackable": true,
+              "condition": 1,
+              "price": 0
+            },
             "description": "",
             "quantity": 1,
             "stackable": true,
@@ -271,61 +256,130 @@
         "Signature Item": "Photo of partner",
         "Cash": 600,
         "Loadout": null,
-        "Weapons": [
+        "Weapons": []
+      }
+    },
+    "312447437359022082": {
+      "312447437359022082_1": {
+        "Name": "Chungus Bargain",
+        "Career": "Scientist",
+        "Gender": "Male",
+        "Age": 34,
+        "Attributes": {
+          "Strength": 2,
+          "Agility": 3,
+          "Wits": 5,
+          "Empathy": 4
+        },
+        "Skills": {
+          "Heavy_Machinery": 0,
+          "Stamina": 1,
+          "Close_Combat": 0,
+          "Mobility": 0,
+          "Piloting": 0,
+          "Ranged_Combat": 1,
+          "Observation": 3,
+          "Comtech": 2,
+          "Survival": 1,
+          "Manipulation": 1,
+          "Command": 0,
+          "Medical_Aid": 1
+        },
+        "Talent": "Inquisitive",
+        "Agenda": "You find it hard to delegate to others, even if it means taking on extra work.",
+        "Inventory": [
           {
-            "name": "Mechanical Cutting Torch",
+            "name": {
+              "name": "M314 Motion Tracker",
+              "description": "",
+              "quantity": 1,
+              "stackable": true,
+              "condition": 1,
+              "price": 0
+            },
             "description": "",
             "quantity": 1,
             "stackable": true,
             "condition": 1,
-            "price": 0,
-            "bonus": 0,
-            "damage": 3,
-            "range": "Engaged",
-            "weight": 1,
-            "cost": 300,
-            "lore": "A utilitarian blowtorch primarily used for welding and cutting through metal, though it can serve as an improvised melee weapon in a pinch. A relic of practicality, the torch must make a Power Supply roll after each use.",
-            "weapon_class": "melee",
-            "damage_type": "energy",
-            "full_auto": false,
-            "uses_ammo": true,
-            "ammo_types": null,
-            "single_shot": false,
-            "power_supply": 5,
-            "special_ammo_effect": null,
-            "blast_power": null,
-            "fire_intensity": null,
-            "fire_on_hit": false,
-            "inflicts_condition": null,
-            "special_effect": null,
-            "grappling": false,
-            "armor_effect": "armor_piercing",
-            "max_damage": null,
-            "range_damage_falloff": null,
-            "direct_target_bonus": null,
-            "detonation_trigger": null,
-            "area_effect": null,
-            "persistent_effect": null,
-            "secondary_weapon": null,
-            "integrated_in": null,
-            "vulnerable_component": null,
-            "overload_risk": null,
-            "malfunction_risk": null,
-            "autonomous": false,
-            "autonomous_skill": null,
-            "hidden": null,
-            "alternate_fire_mode": null,
-            "user_condition_penalty": null,
-            "critical_override": null,
-            "recharge_time": null
+            "price": 0
+          },
+          {
+            "name": {
+              "name": "Digital video camera",
+              "description": "",
+              "quantity": 1,
+              "stackable": true,
+              "condition": 1,
+              "price": 0
+            },
+            "description": "",
+            "quantity": 1,
+            "stackable": true,
+            "condition": 1,
+            "price": 0
           }
-        ]
+        ],
+        "Signature Item": "Albert Einstein Award",
+        "Cash": 400,
+        "Loadout": null,
+        "Weapons": []
+      },
+      "312447437359022082_2": {
+        "Name": "Snork Snavem",
+        "Career": "Kid",
+        "Gender": "Male",
+        "Age": 88,
+        "Attributes": {
+          "Strength": 4,
+          "Agility": 4,
+          "Wits": 4,
+          "Empathy": 2
+        },
+        "Skills": {
+          "Heavy_Machinery": 1,
+          "Stamina": 0,
+          "Close_Combat": 1,
+          "Mobility": 3,
+          "Piloting": 0,
+          "Ranged_Combat": 0,
+          "Observation": 1,
+          "Comtech": 0,
+          "Survival": 2,
+          "Manipulation": 0,
+          "Command": 0,
+          "Medical_Aid": 0
+        },
+        "Talent": "Nimble",
+        "Agenda": "You want to find an adult you can trust -- really trust.",
+        "Inventory": [
+          {
+            "name": "Magnet",
+            "description": "",
+            "quantity": 1,
+            "stackable": true,
+            "condition": 1,
+            "price": 0
+          },
+          {
+            "name": "Yo-yo",
+            "description": "",
+            "quantity": 1,
+            "stackable": true,
+            "condition": 1,
+            "price": 0
+          }
+        ],
+        "Signature Item": "Bracelet made by older sibling",
+        "Cash": 2,
+        "Loadout": null,
+        "Weapons": []
       }
     }
   },
   "primary_characters": {
     "203249116795371520": "203249116795371520_3",
     "142085565892788224": "142085565892788224_1",
-    "289198795625857026": "289198795625857026_1"
+    "289198795625857026": "289198795625857026_1",
+    "312447437359022082": "312447437359022082_1"
   }
 }
