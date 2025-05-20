@@ -3,7 +3,7 @@ from dataclasses import dataclass, field
 from .items import Inventory, Item, ConsumableItem, ClothingItem, ArmorItem, SuitItem, AccessoryItem
 from .dice import DiceRoll
 from .weapon_item import WeaponItem
-from .wearables import WearableLoadout
+#from .wearables import WearableLoadout
 
 @dataclass
 class Attributes:
@@ -42,7 +42,7 @@ class Character:
     inventory: Inventory = field(default_factory=Inventory)
     signature_item: str = ""
     cash: int = 0
-    loadout: Optional[WearableLoadout] = None  # Equipped wearables
+    #loadout: Optional[WearableLoadout] = None  # Equipped wearables
     weapons: List[WeaponItem] = field(default_factory=list)  # Equipped weapons
     
     @classmethod
@@ -57,7 +57,7 @@ class Character:
             attributes=Attributes(),
             skills=Skills(),
             inventory=Inventory(),
-            loadout=WearableLoadout(),
+            #loadout=WearableLoadout(),
             weapons=[]
         )
     
@@ -74,7 +74,7 @@ class Character:
             attributes=Attributes(),
             skills=Skills(),
             inventory=Inventory(),
-            loadout=WearableLoadout(),
+            #loadout=WearableLoadout(),
             weapons=[]
         )
         

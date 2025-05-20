@@ -16,7 +16,7 @@ import copy  # Add at the top with other imports
 import logging
 from models.wearables import all_wearable_items
 from models.weapons import all_weapon_items  # You may need to create this list in weapons.py if not present
-from models.wearables import WearableLoadout
+#from models.wearables import WearableLoadout
 from models.weapon_item import WeaponItem
 
 # Set up logging
