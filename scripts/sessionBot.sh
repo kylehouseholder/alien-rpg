@@ -1,7 +1,7 @@
 #!/bin/bash
 
 SESSION="alien-bot"
-VENV_PATH="venv/bin/activate"
+# VENV_PATH="venv/bin/activate"
 BOT_CMD="python -u main.py"
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 LOG_PATH="$SCRIPT_DIR/bot.log"
@@ -15,4 +15,4 @@ if tmux has-session -t "$SESSION" 2>/dev/null; then
 fi
 
 tmux new-session -d -s "$SESSION" \
-    "source $VENV_PATH && exec $BOT_CMD 2>&1 | tee -a $LOG_PATH"
+#    "source $VENV_PATH && exec $BOT_CMD 2>&1 | tee -a $LOG_PATH"
