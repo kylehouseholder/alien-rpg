@@ -753,7 +753,7 @@ async def cmd_sheet(interaction: discord.Interaction):
     user_id = str(user.id)
     log_this_action = True
     log_debug(f"Sheet command by user {user_id}", enabled=log_this_action)
-    log_debug(f"Primary chars: {[data_manager.get_user_characters(uid)[cid].name for uid, cid in data_manager.players[uid]['primary_character'].items() if cid in data_manager.get_user_characters(uid)]}", enabled=log_this_action)
+    log_debug(f"Primary chars: {[data_manager.get_user_characters(user_id)[cid].name for cid in data_manager.players[user_id]['primary_character'].keys() if cid in data_manager.get_user_characters(user_id)]}", enabled=log_this_action)
     
     char = data_manager.get_primary_character(user_id)
     log_debug(f"Primary char: {char.name if char else 'None'}", enabled=log_this_action)
