@@ -13,6 +13,7 @@ import datetime
 from character_creation.utils import (
     format_attribute_bar, format_skill_bar, get_paired_gear, get_article_for_item, find_wearable_by_name, find_weapon_by_name, handle_dice_roll_item
 )
+import os
 
 # NOTE: The following must be provided by the caller (main.py):
 # - send_dm
@@ -22,11 +23,39 @@ from character_creation.utils import (
 
 # All functions below require send_dm, wait_for_user_message, and creation_sessions to be passed in as arguments or available in the calling context.
 
+# Logging utilities for this module
+
+logger = logging.getLogger(__name__)
+
+def log_debug(msg: str, enabled: bool = True):
+    if enabled:
+        logger.debug(msg)
+
+def log_error(msg: str, enabled: bool = True):
+    if enabled:
+        logger.error(msg)
+
 async def select_personal_details(user, char_id: str, send_dm, wait_for_user_message, creation_sessions, logger):
     user_id = str(user.id)
-    logger.debug(f"Starting personal details for user {user_id}, char {char_id}")
+    # Generate new character ID using last 4 digits of user_id as prefix, then 2-digit serial (01-99)
+    prefix = user_id[-4:]
+    existing_ids = [cid for cid in data_manager.get_user_characters(user_id).keys() if cid.startswith(prefix)]
+    used_serials = set()
+    for cid in existing_ids:
+        serial = cid[len(prefix):]
+        if serial.isdigit():
+            used_serials.add(int(serial))
+    # Find the lowest available serial from 1 to 99
+    for i in range(1, 100):
+        if i not in used_serials:
+            next_serial = i
+            break
+    new_char_id = f"{prefix}{next_serial:02d}"
+    char_id = new_char_id
+    log_this_action = True
+    log_debug(f"Begin select_personal_details for user {user_id}, char {char_id}", enabled=log_this_action)
     if user_id not in creation_sessions or char_id not in creation_sessions[user_id]:
-        logger.error(f"No valid session found for user {user_id}, char {char_id}")
+        log_error(f"No valid session found for user {user_id}, char {char_id}", enabled=log_this_action)
         await send_dm(user, "```text\n[ERROR] Character creation session lost. Please start over with /createcharacter.\n```")
         return
     if user_id in creation_sessions and char_id in creation_sessions[user_id]:
@@ -173,7 +202,7 @@ Age: {char.age}
 Confirm these details? (Y/N)```""")
         confirm = await wait_for_user_message(user)
         if confirm.content.strip().upper() == "Y":
-            logger.debug(f"Personal details confirmed for user {user_id}, char {char_id}")
+            log_debug(f"Personal details confirmed for user {user_id}, char {char_id}", enabled=log_this_action)
             await send_dm(user, "```text\n[OK] Personal details saved. Proceeding to Career Selection...\n```")
             await asyncio.sleep(0.3)
             await select_career(user, char_id, send_dm, wait_for_user_message, creation_sessions, logger)
@@ -181,7 +210,7 @@ Confirm these details? (Y/N)```""")
             await send_dm(user, "```text\n[RESET] Let's enter the details again.\n```")
             await select_personal_details(user, char_id, send_dm, wait_for_user_message, creation_sessions, logger)
     except Exception as e:
-        logger.error(f"Error in personal details selection: {e}")
+        log_error(f"Error in personal details selection: {e}", enabled=log_this_action)
         if user_id in creation_sessions and char_id in creation_sessions[user_id]:
             del creation_sessions[user_id][char_id]
         await send_dm(user, "```text\n[ERROR] Character creation failed. Please try again with /createcharacter.\n```")
@@ -189,13 +218,14 @@ Confirm these details? (Y/N)```""")
 
 async def select_career(user, char_id: str, send_dm, wait_for_user_message, creation_sessions, logger):
     user_id = str(user.id)
-    logger.debug(f"Starting career selection for user {user_id}, char {char_id}")
+    log_this_action = True
+    log_debug(f"Starting career selection for user {user_id}, char {char_id}", enabled=log_this_action)
     if user_id not in creation_sessions or char_id not in creation_sessions[user_id]:
-        logger.error(f"No character found in session for user {user_id}, char {char_id}")
+        log_error(f"No character found in session for user {user_id}, char {char_id}", enabled=log_this_action)
         await send_dm(user, "```text\n[ERROR] Character creation session lost. Please start over with /createcharacter.\n```")
         return
     char = creation_sessions[user_id][char_id]
-    logger.debug(f"Found character in session: {char.name}")
+    log_debug(f"Found character in session: {char.name}", enabled=log_this_action)
     careers = data_manager.get_playergen()["Careers"]
     career_names = list(careers.keys())
     def get_menu():
@@ -404,8 +434,10 @@ async def start_attr(user, char_id: str, send_dm, wait_for_user_message, creatio
             continue
 
 async def assign_skills(user, char_id: str, send_dm, wait_for_user_message, creation_sessions, logger):
-    careers = data_manager.get_playergen()["Careers"]
+    log_this_action = True
     user_id = str(user.id)
+    log_debug(f"Begin assign_skills for user {user_id}, char {char_id}", enabled=log_this_action)
+    careers = data_manager.get_playergen()["Careers"]
     if user_id not in creation_sessions or char_id not in creation_sessions[user_id]:
         await send_dm(user, "```text\n[ERROR] No career found in session. Please start over with /createcharacter.\n```")
         return
@@ -546,10 +578,12 @@ async def assign_skills(user, char_id: str, send_dm, wait_for_user_message, crea
     await send_dm(user, "\n".join(display))
     confirm = await wait_for_user_message(user)
     if confirm.content.strip().upper() == "Y":
+        log_debug(f"Skills confirmed for user {user_id}, char {char_id}", enabled=log_this_action)
         await send_dm(user, "```text\n[OK] Skills saved. Proceeding to Talent...\n```")
         await select_talent(user, char_id, send_dm, wait_for_user_message, creation_sessions, logger)
         return
     else:
+        log_debug(f"Skills reset for user {user_id}, char {char_id}", enabled=log_this_action)
         await send_dm(user, "```text\n[RESET] Let's reassign skills.\n```")
         for skill in key_skills + available_skills:
             skill_attr = skill.lower().replace(" ", "_")
@@ -558,8 +592,10 @@ async def assign_skills(user, char_id: str, send_dm, wait_for_user_message, crea
         return
 
 async def select_talent(user, char_id: str, send_dm, wait_for_user_message, creation_sessions, logger):
-    careers = data_manager.get_playergen()["Careers"]
+    log_this_action = True
     user_id = str(user.id)
+    log_debug(f"Begin select_talent for user {user_id}, char {char_id}", enabled=log_this_action)
+    careers = data_manager.get_playergen()["Careers"]
     if user_id not in creation_sessions or char_id not in creation_sessions[user_id]:
         await send_dm(user, "```text\n[ERROR] No career found in session. Please start over with /createcharacter.\n```")
         return
@@ -595,8 +631,10 @@ async def select_talent(user, char_id: str, send_dm, wait_for_user_message, crea
         return
 
 async def select_agenda(user, char_id: str, send_dm, wait_for_user_message, creation_sessions, logger):
-    careers = data_manager.get_playergen()["Careers"]
+    log_this_action = True
     user_id = str(user.id)
+    log_debug(f"Begin select_agenda for user {user_id}, char {char_id}", enabled=log_this_action)
+    careers = data_manager.get_playergen()["Careers"]
     if user_id not in creation_sessions or char_id not in creation_sessions[user_id]:
         await send_dm(user, "```text\n[ERROR] No career found in session. Please start over with /createcharacter.\n```")
         return
@@ -625,8 +663,10 @@ async def select_agenda(user, char_id: str, send_dm, wait_for_user_message, crea
         return
 
 async def select_gear(user, char_id: str, send_dm, wait_for_user_message, creation_sessions, logger):
-    careers = data_manager.get_playergen()["Careers"]
+    log_this_action = True
     user_id = str(user.id)
+    log_debug(f"Begin select_gear for user {user_id}, char {char_id}", enabled=log_this_action)
+    careers = data_manager.get_playergen()["Careers"]
     if user_id not in creation_sessions or char_id not in creation_sessions[user_id]:
         await send_dm(user, "```text\n[ERROR] No career found in session. Please start over with /createcharacter.\n```")
         return
@@ -710,8 +750,10 @@ Confirm these selections? (Y/N)```""")
                 break
 
 async def select_signature_item(user, char_id: str, send_dm, wait_for_user_message, creation_sessions, logger):
-    careers = data_manager.get_playergen()["Careers"]
+    log_this_action = True
     user_id = str(user.id)
+    log_debug(f"Begin select_signature_item for user {user_id}, char {char_id}", enabled=log_this_action)
+    careers = data_manager.get_playergen()["Careers"]
     if user_id not in creation_sessions or char_id not in creation_sessions[user_id]:
         await send_dm(user, "```text\n[ERROR] No career found in session. Please start over with /createcharacter.\n```")
         return
@@ -740,8 +782,9 @@ async def select_signature_item(user, char_id: str, send_dm, wait_for_user_messa
         return
 
 async def apply_starting_cash_and_finalize(user, char_id: str, send_dm, wait_for_user_message, creation_sessions, logger):
-    careers = data_manager.get_playergen()["Careers"]
+    log_this_action = True
     user_id = str(user.id)
+    careers = data_manager.get_playergen()["Careers"]
     if user_id not in creation_sessions or char_id not in creation_sessions[user_id]:
         await send_dm(user, "```text\n[ERROR] No character in progress. Please start over with /createcharacter.\n```")
         return
@@ -753,8 +796,10 @@ async def apply_starting_cash_and_finalize(user, char_id: str, send_dm, wait_for
     await finalize_character(user, char_id, send_dm, wait_for_user_message, creation_sessions, logger, finalstep=True)
 
 async def finalize_character(user, char_id: str, send_dm, wait_for_user_message, creation_sessions, logger, finalstep=False):
-    careers = data_manager.get_playergen()["Careers"]
+    log_this_action = True
     user_id = str(user.id)
+    log_debug(f"Begin finalize_character for user {user_id}, char {char_id}", enabled=log_this_action)
+    careers = data_manager.get_playergen()["Careers"]
     if user_id not in creation_sessions or char_id not in creation_sessions[user_id]:
         await send_dm(user, "```text\n[ERROR] No character in progress. Please start over with /createcharacter.\n```")
         return
@@ -793,7 +838,7 @@ async def finalize_character(user, char_id: str, send_dm, wait_for_user_message,
         msg = await wait_for_user_message(user)
         choice = msg.content.strip().upper()
         if choice == "1":
-            logger.debug(f"Saving character {char.name} for user {user_id}")
+            log_debug(f"Saving character {char.name} for user {user_id}", enabled=True)
             if user_id not in data_manager.characters:
                 data_manager.characters[user_id] = {}
             weapon_names = {w.name for w in find_weapon_by_name.__globals__['all_weapon_items']}
@@ -813,12 +858,7 @@ async def finalize_character(user, char_id: str, send_dm, wait_for_user_message,
                     new_inventory.append(item)
             char.inventory.items = new_inventory
             data_manager.characters[user_id][char_id] = char
-            if not data_manager.primary_characters.get(user_id):
-                logger.debug(f"Setting {char.name} as primary character for user {user_id}")
-                data_manager.primary_characters[user_id] = char_id
             data_manager.save_characters()
-            logger.debug(f"Characters after save: {data_manager.characters}")
-            logger.debug(f"Primary characters after save: {data_manager.primary_characters}")
             del creation_sessions[user_id][char_id]
             await send_dm(user, """```text\n[OK] Character creation complete!\nYour character has been saved and is ready for use.\n```""")
             return
@@ -840,6 +880,9 @@ async def finalize_character(user, char_id: str, send_dm, wait_for_user_message,
             continue
 
 async def edit_section(user, char_id, section, send_dm, wait_for_user_message, creation_sessions, logger):
+    log_this_action = True
+    user_id = str(user.id)
+    log_debug(f"Begin edit_section for user {user_id}, char {char_id}, section {section}", enabled=log_this_action)
     await send_dm(user, f"```text\n[EDIT] Section {section} editing not yet implemented. Returning to summary...\n```")
     return
 

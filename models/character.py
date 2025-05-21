@@ -149,6 +149,14 @@ class Character:
         # Helper to serialize weapons
         def serialize_weapons(weapons):
             return [vars(w) for w in weapons]
+        # Flatten inventory: each item is a dict with primitive fields
+        inventory_list = []
+        for item in self.inventory.items:
+            d = vars(item).copy()
+            # Remove any nested 'name' dicts
+            while isinstance(d.get('name'), dict):
+                d = d['name']
+            inventory_list.append(d)
         return {
             'Name': self.name,
             'Career': self.career,
@@ -165,7 +173,7 @@ class Character:
             },
             'Talent': self.talent,
             'Agenda': self.agenda,
-            'Inventory': [vars(item) for item in self.inventory.items],
+            'Inventory': inventory_list,
             'Signature Item': self.signature_item,
             'Cash': self.cash,
             'Loadout': serialize_loadout(self.loadout),

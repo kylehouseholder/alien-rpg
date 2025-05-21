@@ -1,8 +1,8 @@
 {
   "characters": {
     "203249116795371520": {
-      "203249116795371520_3": {
-        "Name": "dsfadsf",
+      "152001": {
+        "Name": "Stag Taters",
         "Career": "Colonial Marine",
         "Gender": "Female",
         "Age": 23,
@@ -30,28 +30,7 @@
         "Agenda": "You are a decorated hero, you need to defend your reputation. At all costs.",
         "Inventory": [
           {
-            "name": {
-              "name": {
-                "name": {
-                  "name": "M41A Pulse Rifle",
-                  "description": "",
-                  "quantity": 1,
-                  "stackable": true,
-                  "condition": 1,
-                  "price": 0
-                },
-                "description": "",
-                "quantity": 1,
-                "stackable": true,
-                "condition": 1,
-                "price": 0
-              },
-              "description": "",
-              "quantity": 1,
-              "stackable": true,
-              "condition": 1,
-              "price": 0
-            },
+            "name": "M41A Pulse Rifle",
             "description": "",
             "quantity": 1,
             "stackable": true,
@@ -59,28 +38,7 @@
             "price": 0
           },
           {
-            "name": {
-              "name": {
-                "name": {
-                  "name": "M314 Motion Tracker",
-                  "description": "",
-                  "quantity": 1,
-                  "stackable": true,
-                  "condition": 1,
-                  "price": 0
-                },
-                "description": "",
-                "quantity": 1,
-                "stackable": true,
-                "condition": 1,
-                "price": 0
-              },
-              "description": "",
-              "quantity": 1,
-              "stackable": true,
-              "condition": 1,
-              "price": 0
-            },
+            "name": "M314 Motion Tracker",
             "description": "",
             "quantity": 1,
             "stackable": true,
@@ -93,7 +51,7 @@
         "Loadout": null,
         "Weapons": []
       },
-      "203249116795371520_2": {
+      "152002": {
         "Name": "Peep Wwaters",
         "Career": "Colonial Marine",
         "Gender": "Male",
@@ -122,28 +80,7 @@
         "Agenda": "You are a decorated hero, you need to defend your reputation. At all costs.",
         "Inventory": [
           {
-            "name": {
-              "name": {
-                "name": {
-                  "name": "M41A Pulse Rifle",
-                  "description": "",
-                  "quantity": 1,
-                  "stackable": true,
-                  "condition": 1,
-                  "price": 0
-                },
-                "description": "",
-                "quantity": 1,
-                "stackable": true,
-                "condition": 1,
-                "price": 0
-              },
-              "description": "",
-              "quantity": 1,
-              "stackable": true,
-              "condition": 1,
-              "price": 0
-            },
+            "name": "M41A Pulse Rifle",
             "description": "",
             "quantity": 1,
             "stackable": true,
@@ -151,28 +88,7 @@
             "price": 0
           },
           {
-            "name": {
-              "name": {
-                "name": {
-                  "name": "2 G2 Electroshock Grenades",
-                  "description": "",
-                  "quantity": 1,
-                  "stackable": true,
-                  "condition": 1,
-                  "price": 0
-                },
-                "description": "",
-                "quantity": 1,
-                "stackable": true,
-                "condition": 1,
-                "price": 0
-              },
-              "description": "",
-              "quantity": 1,
-              "stackable": true,
-              "condition": 1,
-              "price": 0
-            },
+            "name": "2 G2 Electroshock Grenades",
             "description": "",
             "quantity": 1,
             "stackable": true,
@@ -187,7 +103,7 @@
       }
     },
     "142085565892788224": {
-      "142085565892788224_1": {
+      "822401": {
         "Name": "Zip Lorenzo Chavez",
         "Career": "Colonial Marine",
         "Gender": "Male",
@@ -216,49 +132,7 @@
         "Agenda": "You are a decorated hero, you need to defend your reputation. At all costs.",
         "Inventory": [
           {
-            "name": {
-              "name": {
-                "name": {
-                  "name": {
-                    "name": {
-                      "name": {
-                        "name": "IRC MK.35 Pressure Suit",
-                        "description": "",
-                        "quantity": 1,
-                        "stackable": true,
-                        "condition": 1,
-                        "price": 0
-                      },
-                      "description": "",
-                      "quantity": 1,
-                      "stackable": true,
-                      "condition": 1,
-                      "price": 0
-                    },
-                    "description": "",
-                    "quantity": 1,
-                    "stackable": true,
-                    "condition": 1,
-                    "price": 0
-                  },
-                  "description": "",
-                  "quantity": 1,
-                  "stackable": true,
-                  "condition": 1,
-                  "price": 0
-                },
-                "description": "",
-                "quantity": 1,
-                "stackable": true,
-                "condition": 1,
-                "price": 0
-              },
-              "description": "",
-              "quantity": 1,
-              "stackable": true,
-              "condition": 1,
-              "price": 0
-            },
+            "name": "IRC MK.35 Pressure Suit",
             "description": "",
             "quantity": 1,
             "stackable": true,
@@ -266,49 +140,7 @@
             "price": 0
           },
           {
-            "name": {
-              "name": {
-                "name": {
-                  "name": {
-                    "name": {
-                      "name": {
-                        "name": "M41A Pulse Rifle",
-                        "description": "",
-                        "quantity": 1,
-                        "stackable": true,
-                        "condition": 1,
-                        "price": 0
-                      },
-                      "description": "",
-                      "quantity": 1,
-                      "stackable": true,
-                      "condition": 1,
-                      "price": 0
-                    },
-                    "description": "",
-                    "quantity": 1,
-                    "stackable": true,
-                    "condition": 1,
-                    "price": 0
-                  },
-                  "description": "",
-                  "quantity": 1,
-                  "stackable": true,
-                  "condition": 1,
-                  "price": 0
-                },
-                "description": "",
-                "quantity": 1,
-                "stackable": true,
-                "condition": 1,
-                "price": 0
-              },
-              "description": "",
-              "quantity": 1,
-              "stackable": true,
-              "condition": 1,
-              "price": 0
-            },
+            "name": "M41A Pulse Rifle",
             "description": "",
             "quantity": 1,
             "stackable": true,
@@ -323,7 +155,7 @@
       }
     },
     "289198795625857026": {
-      "289198795625857026_1": {
+      "702601": {
         "Name": "Elias Thorne",
         "Career": "Roughneck",
         "Gender": "Male",
@@ -352,49 +184,7 @@
         "Agenda": "You once sacrificed your family for the job. Now you won't let your friends down -- ever.",
         "Inventory": [
           {
-            "name": {
-              "name": {
-                "name": {
-                  "name": {
-                    "name": {
-                      "name": {
-                        "name": "IRC MK.50 Compression Suit",
-                        "description": "",
-                        "quantity": 1,
-                        "stackable": true,
-                        "condition": 1,
-                        "price": 0
-                      },
-                      "description": "",
-                      "quantity": 1,
-                      "stackable": true,
-                      "condition": 1,
-                      "price": 0
-                    },
-                    "description": "",
-                    "quantity": 1,
-                    "stackable": true,
-                    "condition": 1,
-                    "price": 0
-                  },
-                  "description": "",
-                  "quantity": 1,
-                  "stackable": true,
-                  "condition": 1,
-                  "price": 0
-                },
-                "description": "",
-                "quantity": 1,
-                "stackable": true,
-                "condition": 1,
-                "price": 0
-              },
-              "description": "",
-              "quantity": 1,
-              "stackable": true,
-              "condition": 1,
-              "price": 0
-            },
+            "name": "IRC MK.50 Compression Suit",
             "description": "",
             "quantity": 1,
             "stackable": true,
@@ -409,7 +199,7 @@
       }
     },
     "312447437359022082": {
-      "312447437359022082_1": {
+      "208201": {
         "Name": "Chungus Bargain",
         "Career": "Scientist",
         "Gender": "Male",
@@ -438,49 +228,7 @@
         "Agenda": "You find it hard to delegate to others, even if it means taking on extra work.",
         "Inventory": [
           {
-            "name": {
-              "name": {
-                "name": {
-                  "name": {
-                    "name": {
-                      "name": {
-                        "name": "M314 Motion Tracker",
-                        "description": "",
-                        "quantity": 1,
-                        "stackable": true,
-                        "condition": 1,
-                        "price": 0
-                      },
-                      "description": "",
-                      "quantity": 1,
-                      "stackable": true,
-                      "condition": 1,
-                      "price": 0
-                    },
-                    "description": "",
-                    "quantity": 1,
-                    "stackable": true,
-                    "condition": 1,
-                    "price": 0
-                  },
-                  "description": "",
-                  "quantity": 1,
-                  "stackable": true,
-                  "condition": 1,
-                  "price": 0
-                },
-                "description": "",
-                "quantity": 1,
-                "stackable": true,
-                "condition": 1,
-                "price": 0
-              },
-              "description": "",
-              "quantity": 1,
-              "stackable": true,
-              "condition": 1,
-              "price": 0
-            },
+            "name": "M314 Motion Tracker",
             "description": "",
             "quantity": 1,
             "stackable": true,
@@ -488,49 +236,7 @@
             "price": 0
           },
           {
-            "name": {
-              "name": {
-                "name": {
-                  "name": {
-                    "name": {
-                      "name": {
-                        "name": "Digital video camera",
-                        "description": "",
-                        "quantity": 1,
-                        "stackable": true,
-                        "condition": 1,
-                        "price": 0
-                      },
-                      "description": "",
-                      "quantity": 1,
-                      "stackable": true,
-                      "condition": 1,
-                      "price": 0
-                    },
-                    "description": "",
-                    "quantity": 1,
-                    "stackable": true,
-                    "condition": 1,
-                    "price": 0
-                  },
-                  "description": "",
-                  "quantity": 1,
-                  "stackable": true,
-                  "condition": 1,
-                  "price": 0
-                },
-                "description": "",
-                "quantity": 1,
-                "stackable": true,
-                "condition": 1,
-                "price": 0
-              },
-              "description": "",
-              "quantity": 1,
-              "stackable": true,
-              "condition": 1,
-              "price": 0
-            },
+            "name": "Digital video camera",
             "description": "",
             "quantity": 1,
             "stackable": true,
@@ -543,241 +249,44 @@
         "Loadout": null,
         "Weapons": []
       },
-      "312447437359022082_2": {
-        "Name": "Snork Snavem",
-        "Career": "Kid",
+      "208202": {
+        "Name": "Stikin Damudd",
+        "Career": "Scientist",
         "Gender": "Male",
-        "Age": 88,
-        "Attributes": {
-          "Strength": 4,
-          "Agility": 4,
-          "Wits": 4,
-          "Empathy": 2
-        },
-        "Skills": {
-          "Heavy_Machinery": 1,
-          "Stamina": 0,
-          "Close_Combat": 1,
-          "Mobility": 3,
-          "Piloting": 0,
-          "Ranged_Combat": 0,
-          "Observation": 1,
-          "Comtech": 0,
-          "Survival": 2,
-          "Manipulation": 0,
-          "Command": 0,
-          "Medical_Aid": 0
-        },
-        "Talent": "Nimble",
-        "Agenda": "You want to find an adult you can trust -- really trust.",
-        "Inventory": [
-          {
-            "name": {
-              "name": {
-                "name": {
-                  "name": {
-                    "name": {
-                      "name": "Magnet",
-                      "description": "",
-                      "quantity": 1,
-                      "stackable": true,
-                      "condition": 1,
-                      "price": 0
-                    },
-                    "description": "",
-                    "quantity": 1,
-                    "stackable": true,
-                    "condition": 1,
-                    "price": 0
-                  },
-                  "description": "",
-                  "quantity": 1,
-                  "stackable": true,
-                  "condition": 1,
-                  "price": 0
-                },
-                "description": "",
-                "quantity": 1,
-                "stackable": true,
-                "condition": 1,
-                "price": 0
-              },
-              "description": "",
-              "quantity": 1,
-              "stackable": true,
-              "condition": 1,
-              "price": 0
-            },
-            "description": "",
-            "quantity": 1,
-            "stackable": true,
-            "condition": 1,
-            "price": 0
-          },
-          {
-            "name": {
-              "name": {
-                "name": {
-                  "name": {
-                    "name": {
-                      "name": "Yo-yo",
-                      "description": "",
-                      "quantity": 1,
-                      "stackable": true,
-                      "condition": 1,
-                      "price": 0
-                    },
-                    "description": "",
-                    "quantity": 1,
-                    "stackable": true,
-                    "condition": 1,
-                    "price": 0
-                  },
-                  "description": "",
-                  "quantity": 1,
-                  "stackable": true,
-                  "condition": 1,
-                  "price": 0
-                },
-                "description": "",
-                "quantity": 1,
-                "stackable": true,
-                "condition": 1,
-                "price": 0
-              },
-              "description": "",
-              "quantity": 1,
-              "stackable": true,
-              "condition": 1,
-              "price": 0
-            },
-            "description": "",
-            "quantity": 1,
-            "stackable": true,
-            "condition": 1,
-            "price": 0
-          }
-        ],
-        "Signature Item": "Bracelet made by older sibling",
-        "Cash": 2,
-        "Loadout": null,
-        "Weapons": []
-      },
-      "312447437359022082_3": {
-        "Name": "Pingle Dangus",
-        "Career": "Entertainer",
-        "Gender": "Female",
         "Age": 38,
         "Attributes": {
           "Strength": 4,
           "Agility": 2,
-          "Wits": 4,
-          "Empathy": 4
-        },
-        "Skills": {
-          "Heavy_Machinery": 1,
-          "Stamina": 0,
-          "Close_Combat": 1,
-          "Mobility": 0,
-          "Piloting": 1,
-          "Ranged_Combat": 0,
-          "Observation": 1,
-          "Comtech": 0,
-          "Survival": 1,
-          "Manipulation": 3,
-          "Command": 2,
-          "Medical_Aid": 0
-        },
-        "Talent": "Trustworthy",
-        "Agenda": "No one knows of your alcohol problem, but damn you need a drink.",
-        "Inventory": [
-          {
-            "name": {
-              "name": {
-                "name": "Seegson P-Dat",
-                "description": "",
-                "quantity": 1,
-                "stackable": true,
-                "condition": 1,
-                "price": 0
-              },
-              "description": "",
-              "quantity": 1,
-              "stackable": true,
-              "condition": 1,
-              "price": 0
-            },
-            "description": "",
-            "quantity": 1,
-            "stackable": true,
-            "condition": 1,
-            "price": 0
-          },
-          {
-            "name": {
-              "name": {
-                "name": "Switchblade knife",
-                "description": "",
-                "quantity": 1,
-                "stackable": true,
-                "condition": 1,
-                "price": 0
-              },
-              "description": "",
-              "quantity": 1,
-              "stackable": true,
-              "condition": 1,
-              "price": 0
-            },
-            "description": "",
-            "quantity": 1,
-            "stackable": true,
-            "condition": 1,
-            "price": 0
-          }
-        ],
-        "Signature Item": "A magazine article about the biggest show/casino/establishment on Earth where you hope to work one day",
-        "Cash": 700,
-        "Loadout": null,
-        "Weapons": []
-      },
-      "312447437359022082_4": {
-        "Name": "Horck Maven",
-        "Career": "Wildcatter",
-        "Gender": "Female",
-        "Age": 89,
-        "Attributes": {
-          "Strength": 4,
-          "Agility": 3,
-          "Wits": 4,
+          "Wits": 5,
           "Empathy": 3
         },
         "Skills": {
           "Heavy_Machinery": 0,
           "Stamina": 0,
-          "Close_Combat": 1,
+          "Close_Combat": 0,
           "Mobility": 0,
-          "Piloting": 3,
-          "Ranged_Combat": 0,
+          "Piloting": 1,
+          "Ranged_Combat": 1,
           "Observation": 3,
-          "Comtech": 0,
-          "Survival": 3,
+          "Comtech": 3,
+          "Survival": 2,
           "Manipulation": 0,
           "Command": 0,
           "Medical_Aid": 0
         },
-        "Talent": "Miracle Mechanic",
-        "Agenda": "You're tormented by an everlasting itch for things remote, and love to sail forbidden seas.",
+        "Talent": "Breakthrough",
+        "Agenda": "Your last project was stolen from you. Now you keep many of your findings secret.",
         "Inventory": [
           {
-            "name": {
-              "name": "Pups Mapping Device",
-              "description": "",
-              "quantity": 1,
-              "stackable": true,
-              "condition": 1,
-              "price": 0
-            },
+            "name": "M314 Motion Tracker",
+            "description": "",
+            "quantity": 1,
+            "stackable": true,
+            "condition": 1,
+            "price": 0
+          },
+          {
+            "name": "Neuro Visor",
             "description": "",
             "quantity": 1,
             "stackable": true,
@@ -785,17 +294,63 @@
             "price": 0
           }
         ],
-        "Signature Item": "A paper notebook and pencil",
-        "Cash": 300,
+        "Signature Item": "Unfinished scientific paper",
+        "Cash": 100,
         "Loadout": null,
         "Weapons": []
       }
     }
   },
-  "primary_characters": {
-    "203249116795371520": "203249116795371520_3",
-    "142085565892788224": "142085565892788224_1",
-    "289198795625857026": "289198795625857026_1",
-    "312447437359022082": "312447437359022082_1"
+  "players": {
+    "203249116795371520": {
+      "name": "zt.robinson",
+      "characters": [
+        {
+          "152001": "Stag Taters"
+        },
+        {
+          "152002": "Peep Wwaters"
+        }
+      ],
+      "primary_character": {
+        "152001": true
+      }
+    },
+    "142085565892788224": {
+      "name": "moreofanassman",
+      "characters": [
+        {
+          "822401": "Zip Lorenzo Chavez"
+        }
+      ],
+      "primary_character": {
+        "822401": true
+      }
+    },
+    "289198795625857026": {
+      "name": "badcity",
+      "characters": [
+        {
+          "702601": "Elias Thorne"
+        }
+      ],
+      "primary_character": {
+        "702601": true
+      }
+    },
+    "312447437359022082": {
+      "name": "theflyinghouse",
+      "characters": [
+        {
+          "208201": "Chungus Bargain"
+        },
+        {
+          "208202": "Stikin Damudd"
+        }
+      ],
+      "primary_character": {
+        "208201": true
+      }
+    }
   }
 }

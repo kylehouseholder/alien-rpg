@@ -23,19 +23,42 @@ from character_creation.utils import (
     get_skill_and_attr, get_type_icon, get_ammo_icon, get_modifiers
 )
 
+# Set up a formatter with no extra whitespace for all loggers
+formatter = logging.Formatter('[%(asctime)s] [%(levelname)-8s] %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
+
+# Update all handlers for all loggers (including discord.py)
+for logger_name in ('discord', 'discord.client', 'discord.gateway', 'discord.http'):
+    logger = logging.getLogger(logger_name)
+    for handler in logger.handlers:
+        handler.setFormatter(formatter)
+    if not logger.handlers:
+        handler = logging.StreamHandler()
+        handler.setFormatter(formatter)
+        logger.addHandler(handler)
+
+# Utility for log formatting
+
+def format_log_line(level: str, msg: str) -> str:
+    ts = datetime.datetime.now().strftime("[%Y-%m-%d %H:%M:%S]")
+    return f"{ts} [{level.upper()}] {msg}"
+
 # Set up logging
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
-# Debug logging state
 debug_logging_enabled = True
 
-def log_debug(msg: str):
-    ts = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    logger.debug(f"{ts} | {msg}")
-    if debug_logging_enabled:
-        with open(LOG_PATH, "a") as f:
-            f.write(f"{ts} [DEBUG] {msg}\n")
+def log_debug(msg: str, enabled: bool = True):
+    if enabled:
+        logger.debug(msg)
+
+def log_event(msg: str, enabled: bool = True):
+    if enabled:
+        logger.info(msg)
+
+def log_error(msg: str, enabled: bool = True):
+    if enabled:
+        logger.error(msg)
 
 # Load environment variables
 load_dotenv()
@@ -44,13 +67,6 @@ load_dotenv()
 # Alien RPG Discord Bot — FINAL GLOBAL
 # ==============================
 # comment
-
-LOG_PATH = os.path.join(os.path.dirname(__file__), "scripts", "bot.log")
-
-def log_event(msg: str):
-    with open(LOG_PATH, "a") as f:
-        ts = datetime.datetime.now().strftime("[%Y-%m-%d %H:%M:%S]")
-        f.write(f"{ts} [EVENT   ] {msg}\n")
 
 # DataManager and related logic moved to data_manager.py
 from data_manager import data_manager
@@ -106,29 +122,70 @@ async def wait_for_user_message(user, *args, **kwargs):
 async def send_dm(user, content, view=None):
     try:
         if debug_logging_enabled:
-            # Summarize the bot's prompt instead of logging the full content
-            if "name" in content.lower():
-                log_debug(f"[BOT] Prompting {user} for character name")
-            elif "age" in content.lower():
-                log_debug(f"[BOT] Prompting {user} for character age")
-            elif "gender" in content.lower():
-                log_debug(f"[BOT] Prompting {user} for character gender")
-            elif "career" in content.lower():
-                log_debug(f"[BOT] Prompting {user} for character career")
-            elif "attributes" in content.lower():
-                log_debug(f"[BOT] Prompting {user} for attribute allocation")
-            elif "skills" in content.lower():
-                log_debug(f"[BOT] Prompting {user} for skill selection")
-            elif "talent" in content.lower():
-                log_debug(f"[BOT] Prompting {user} for talent selection")
-            elif "agenda" in content.lower():
-                log_debug(f"[BOT] Prompting {user} for personal agenda")
-            elif "gear" in content.lower():
-                log_debug(f"[BOT] Prompting {user} for gear selection")
-            elif "signature" in content.lower():
-                log_debug(f"[BOT] Prompting {user} for signature item")
-            elif "cash" in content.lower():
-                log_debug(f"[BOT] Prompting {user} for starting cash")
+            # Improved prompt detection: only log if a line looks like an actual prompt
+            prompt_type = None
+            prompt_line = None
+            for line in content.splitlines():
+                l = line.strip()
+                if l.lower().startswith("enter your character's full name"):
+                    prompt_type = "character name"
+                    prompt_line = l
+                    break
+                elif l.lower().startswith("enter your character's age"):
+                    prompt_type = "character age"
+                    prompt_line = l
+                    break
+                elif l.lower().startswith("select your character's gender identity"):
+                    prompt_type = "character gender"
+                    prompt_line = l
+                    break
+                elif l.lower().startswith("enter the number of your choice"):
+                    prompt_type = "character gender (number)"
+                    prompt_line = l
+                    break
+                elif l.lower().startswith("enter your character's career") or l.lower().startswith("select your character's career"):
+                    prompt_type = "character career"
+                    prompt_line = l
+                    break
+                elif l.lower().startswith("enter a number to add"):
+                    prompt_type = "attribute allocation"
+                    prompt_line = l
+                    break
+                elif l.lower().startswith("confirm allocation"):
+                    prompt_type = "attribute allocation confirmation"
+                    prompt_line = l
+                    break
+                elif l.lower().startswith("enter three numbers") or l.lower().startswith("enter general skills"):
+                    prompt_type = "skill selection"
+                    prompt_line = l
+                    break
+                elif l.lower().startswith("enter the number of your choice for talent") or l.lower().startswith("select your talent"):
+                    prompt_type = "talent selection"
+                    prompt_line = l
+                    break
+                elif l.lower().startswith("enter the number of your choice for agenda") or l.lower().startswith("select your agenda"):
+                    prompt_type = "personal agenda"
+                    prompt_line = l
+                    break
+                elif l.lower().startswith("enter the number of your choice for gear") or l.lower().startswith("select your gear"):
+                    prompt_type = "gear selection"
+                    prompt_line = l
+                    break
+                elif l.lower().startswith("enter the number of your choice for signature item") or l.lower().startswith("select your signature item"):
+                    prompt_type = "signature item"
+                    prompt_line = l
+                    break
+                elif l.lower().startswith("enter the number of your choice for starting cash") or l.lower().startswith("select your starting cash"):
+                    prompt_type = "starting cash"
+                    prompt_line = l
+                    break
+                # Generic prompt patterns
+                elif l.lower().startswith("enter ") or l.lower().startswith("select ") or l.lower().startswith("confirm "):
+                    prompt_type = "generic prompt"
+                    prompt_line = l
+                    break
+            if prompt_type:
+                log_debug(f"[BOT] Prompting {user} for {prompt_type}")
             else:
                 log_debug(f"[BOT] Sending message to {user}")
         return await user.send(content, view=view)
@@ -627,6 +684,18 @@ def find_weapon_by_name(name):
 async def cmd_create(interaction: discord.Interaction):
     user = interaction.user
     user_id = str(user.id)
+    # Generate new character ID using last 4 digits of user_id as prefix, then 01, 02, etc.
+    prefix = user_id[-4:]
+    user_chars = data_manager.get_user_characters(user_id)
+    existing_ids = [cid for cid in user_chars.keys() if cid.startswith(prefix)]
+    if existing_ids:
+        suffixes = [int(cid[len(prefix):]) for cid in existing_ids if cid[len(prefix):].isdigit()]
+        next_suffix = max(suffixes) + 1 if suffixes else 1
+    else:
+        next_suffix = 1
+    char_id = f"{prefix}{next_suffix:02d}"
+    if debug_logging_enabled:
+        log_debug(f"[OPERATION] Starting character creation for user {user_id}, char {char_id}")
     
     # Check if user is already in a creation session
     if user_id in creation_sessions and any(session for session in creation_sessions[user_id].values()):
@@ -637,13 +706,6 @@ async def cmd_create(interaction: discord.Interaction):
             ephemeral=True
         )
         return
-    
-    user_chars = data_manager.get_user_characters(user_id)
-    
-    # Generate a unique character ID
-    char_id = f"{user.id}_{len(user_chars) + 1}"
-    if debug_logging_enabled:
-        log_debug(f"[OPERATION] Starting character creation for user {user_id}, char {char_id}")
     
     # Initialize the user's session
     if user_id not in creation_sessions:
@@ -689,12 +751,12 @@ async def cmd_create(interaction: discord.Interaction):
 async def cmd_sheet(interaction: discord.Interaction):
     user = interaction.user
     user_id = str(user.id)
-    log_debug(f"Sheet command by user {user_id}")
-    log_debug(f"User {user_id} characters: {[c.name for c in data_manager.get_user_characters(user_id).values()]}")
-    log_debug(f"Primary chars: {[data_manager.get_user_characters(uid)[cid].name for uid, cid in data_manager.primary_characters.items() if cid in data_manager.get_user_characters(uid)]}")
+    log_this_action = True
+    log_debug(f"Sheet command by user {user_id}", enabled=log_this_action)
+    log_debug(f"Primary chars: {[data_manager.get_user_characters(uid)[cid].name for uid, cid in data_manager.players[uid]['primary_character'].items() if cid in data_manager.get_user_characters(uid)]}", enabled=log_this_action)
     
     char = data_manager.get_primary_character(user_id)
-    log_debug(f"Primary char: {char.name if char else 'None'}")
+    log_debug(f"Primary char: {char.name if char else 'None'}", enabled=log_this_action)
     
     if not char:
         await interaction.response.send_message("```text\n[ERROR] No character sheet found.\n```", ephemeral=True)
@@ -744,7 +806,7 @@ async def cmd_delete(interaction: discord.Interaction, *, options: str = ""):
     # Show character list
     char_list = ["```text", ">> YOUR CHARACTERS <<", ""]
     for char_id, char in chars.items():
-        is_primary = char_id == data_manager.primary_characters.get(user_id)
+        is_primary = char_id == list(data_manager.players[user_id]['primary_character'].keys())[0]
         char_list.append(f"{'★ ' if is_primary else ''}{char.name} ({char.career})")
     char_list.append("\nEnter the name of the character you want to delete:")
     char_list.append("```")
@@ -771,7 +833,7 @@ async def cmd_delete(interaction: discord.Interaction, *, options: str = ""):
             await user.send("```text\n[ERROR] Character not found.\n```")
             return
         
-        if target_id == data_manager.primary_characters.get(user_id) and len(chars) > 1:
+        if target_id == list(data_manager.players[user_id]['primary_character'].keys())[0] and len(chars) > 1:
             await user.send("""```text
 This is your primary character. You must set another character as primary before deleting this one.
 Use the /characters command to set a different character as primary first.```""")
@@ -854,10 +916,10 @@ class CharacterSheetView(View):
 async def cmd_characters(interaction: discord.Interaction):
     user_id = str(interaction.user.id)
     user_chars = data_manager.get_user_characters(user_id)
-    primary_id = data_manager.primary_characters.get(user_id)
+    primary_id = list(data_manager.players[user_id]['primary_character'].keys())[0]
     if not user_chars:
-        if debug_logging_enabled:
-            log_debug(f"[FAILURE] Characters command for {interaction.user}: No characters found")
+        log_this_action = True
+        log_debug(f"Characters command failed: no characters found for user {interaction.user}", enabled=True)
         await interaction.response.send_message("```text\n[ERROR] No characters found.\n```", ephemeral=True)
         return
     char_list = ["```text", ">> YOUR CHARACTERS <<", ""]
@@ -867,96 +929,98 @@ async def cmd_characters(interaction: discord.Interaction):
     char_list.append("Use the buttons below to manage your characters.")
     char_list.append("```")
     if debug_logging_enabled:
-        log_debug(f"[SUCCESS] Characters command for {interaction.user}: Displayed {len(user_chars)} characters")
+        log_debug(f"Characters command success: displayed {len(user_chars)} characters for user {interaction.user}", enabled=True)
     await interaction.response.send_message('\n'.join(char_list), view=CharacterListView(user_chars, primary_id), ephemeral=True)
 
 @bot.event
 async def on_interaction(interaction: discord.Interaction):
     try:
         if debug_logging_enabled:
-            # Only log the command/interaction type and user, not the full data
             interaction_type = interaction.type.name
             command_name = interaction.data.get('name', '') if interaction.type == discord.InteractionType.application_command else ''
             custom_id = interaction.data.get('custom_id', '') if interaction.type == discord.InteractionType.component else ''
-            log_debug(f"[INTERACTION] {interaction_type} from {interaction.user} - {command_name or custom_id}")
-        
+            log_debug(f"Interaction: {interaction_type} from {interaction.user} - {command_name or custom_id}", enabled=True)
         if interaction.type == discord.InteractionType.component:
             custom_id = interaction.data.get("custom_id", "")
             if custom_id.startswith("delete_"):
                 char_id = custom_id.split("_")[1]
                 user_id = str(interaction.user.id)
                 user_chars = data_manager.get_user_characters(user_id)
-                
                 if char_id in user_chars:
-                    # Store the character name before deletion for the message
                     char_name = user_chars[char_id].name
                     if debug_logging_enabled:
-                        log_debug(f"[OPERATION] Deleting character {char_name} ({char_id}) for user {user_id}")
-                    
-                    # Delete the character
-                    data_manager.delete_character(user_id, char_id)
-                    # Get updated character list
+                        log_debug(f"Deleting character {char_name} ({char_id}) for {interaction.user.name}")
+                    await interaction.response.defer(ephemeral=True)
+                    success, message = await delete_character(user_id, char_id, interaction.guild)
+                    # Refresh user_chars after deletion
                     user_chars = data_manager.get_user_characters(user_id)
-                    primary_id = data_manager.primary_characters.get(user_id)
-                    
-                    # First acknowledge the interaction
-                    await interaction.response.defer()
-                    
-                    # Then update the message with the deletion confirmation
-                    await interaction.edit_original_response(
-                        content=f"```text\nDeleted character {char_name}.\n```",
-                        view=CharacterListView(user_chars, primary_id) if user_chars else None
-                    )
-                    if debug_logging_enabled:
-                        log_debug(f"[SUCCESS] Deleted character {char_name} ({char_id}) for user {user_id}")
+                    if success:
+                        await interaction.edit_original_response(
+                            content=f"```text\n{message}\n```",
+                            view=CharacterListView(user_chars, list(data_manager.players[user_id]['primary_character'].keys())[0]) if user_chars else None
+                        )
+                        if debug_logging_enabled:
+                            log_debug(f"Deleted character {char_name} ({char_id}) for {interaction.user.name}", enabled=True)
+                    else:
+                        if debug_logging_enabled:
+                            log_debug(f"Failed to delete character {char_id} for {interaction.user.name}: {message}", enabled=True)
+                        await interaction.edit_original_response(content=f"```text\n{message}\n```", view=None)
                 else:
                     if debug_logging_enabled:
-                        log_debug(f"[FAILURE] Failed to delete character {char_id} for user {user_id}: Character not found")
-                    await interaction.response.send_message("```text\n[ERROR] Character not found.\n```", ephemeral=True)
+                        log_debug(f"Failed to delete character {char_id} for {interaction.user.name}: Character not found", enabled=True)
+                    await interaction.response.defer(ephemeral=True)
+                    await interaction.edit_original_response(content="```text\n[ERROR] Character not found.\n```", view=None)
             elif custom_id.startswith("primary_"):
                 char_id = custom_id.split("_")[1]
                 user_id = str(interaction.user.id)
                 user_chars = data_manager.get_user_characters(user_id)
-                
                 if char_id in user_chars:
                     if debug_logging_enabled:
-                        log_debug(f"[OPERATION] Setting primary character {user_chars[char_id].name} ({char_id}) for user {user_id}")
-                    # Set as primary character
-                    data_manager.set_primary_character(user_id, char_id)
-                    if debug_logging_enabled:
-                        log_debug(f"[SUCCESS] Set primary character {user_chars[char_id].name} ({char_id}) for user {user_id}")
-                    await interaction.response.send_message(f"```text\n[OK] Set {user_chars[char_id].name} as your primary character.\n```", ephemeral=True)
+                        log_debug(f"[OPERATION] Setting primary character {user_chars[char_id].name} ({char_id}) for {interaction.user.name}")
+                    await interaction.response.defer(ephemeral=True)
+                    success, message = await set_primary_character(user_id, char_id, interaction.guild)
+                    if success:
+                        await interaction.edit_original_response(content=f"```text\n{message}\n```", view=CharacterListView(user_chars, list(data_manager.players[user_id]['primary_character'].keys())[0]))
+                    else:
+                        if debug_logging_enabled:
+                            log_debug(f"[FAILURE] Failed to set primary character {char_id} for {interaction.user.name}: {message}", enabled=True)
+                        await interaction.edit_original_response(content=f"```text\n{message}\n```", view=CharacterListView(user_chars, list(data_manager.players[user_id]['primary_character'].keys())[0]))
                 else:
                     if debug_logging_enabled:
-                        log_debug(f"[FAILURE] Failed to set primary character {char_id} for user {user_id}: Character not found")
-                    await interaction.response.send_message("```text\n[ERROR] Character not found.\n```", ephemeral=True)
+                        log_debug(f"[FAILURE] Failed to set primary character {char_id} for {interaction.user.name}: Character not found", enabled=True)
+                    await interaction.response.defer(ephemeral=True)
+                    await interaction.edit_original_response(content="```text\n[ERROR] Character not found.\n```", view=None)
             elif custom_id.startswith("view_"):
                 char_id = custom_id.split("_")[1]
                 user_id = str(interaction.user.id)
                 user_chars = data_manager.get_user_characters(user_id)
-                
                 if char_id in user_chars:
                     if debug_logging_enabled:
-                        log_debug(f"[OPERATION] Viewing character {user_chars[char_id].name} ({char_id}) for user {user_id}")
-                    # Display character sheet
-                    await interaction.response.send_message(f"```text\nDisplaying character sheet for {user_chars[char_id].name}...\n```", ephemeral=True)
+                        log_debug(f"[OPERATION] Viewing character {user_chars[char_id].name} ({char_id}) for {interaction.user.name}")
+                    await interaction.response.defer(ephemeral=True)
+                    await interaction.edit_original_response(content=f"```text\nDisplaying character sheet for {user_chars[char_id].name}...\n```", view=CharacterListView(user_chars, list(data_manager.players[user_id]['primary_character'].keys())[0]))
                     if debug_logging_enabled:
-                        log_debug(f"[SUCCESS] Displayed character sheet for {user_chars[char_id].name} ({char_id})")
+                        log_debug(f"[SUCCESS] Displayed character sheet for {user_chars[char_id].name} ({char_id})", enabled=True)
                 else:
                     if debug_logging_enabled:
-                        log_debug(f"[FAILURE] Failed to view character {char_id} for user {user_id}: Character not found")
-                    await interaction.response.send_message("```text\n[ERROR] Character not found.\n```", ephemeral=True)
+                        log_debug(f"[FAILURE] Failed to view character {char_id} for {interaction.user.name}: Character not found", enabled=True)
+                    await interaction.response.defer(ephemeral=True)
+                    await interaction.edit_original_response(content="```text\n[ERROR] Character not found.\n```", view=None)
             elif custom_id == "exit":
                 if debug_logging_enabled:
-                    log_debug(f"[SUCCESS] User {interaction.user} exited character management")
-                await interaction.response.send_message("```text\n[OK] Exited character management.\n```", ephemeral=True)
+                    log_debug(f"User {interaction.user} exited character management", enabled=True)
+                await interaction.response.defer(ephemeral=True)
+                await interaction.edit_original_response(content="```text\n[OK] Exited character management.\n```", view=None)
     except Exception as e:
         logger.error(f"Error handling interaction: {e}")
         if debug_logging_enabled:
-            log_debug(f"[ERROR] Error in interaction handler: {str(e)}")
+            log_error(f"Error in interaction handler: {str(e)}", enabled=True)
         # If we haven't responded to the interaction yet, send an error message
         if not interaction.response.is_done():
-            await interaction.response.send_message("```text\n[ERROR] An error occurred while processing your request.\n```", ephemeral=True)
+            try:
+                await interaction.edit_original_response(content="```text\n[ERROR] An error occurred while processing your request.\n```", view=None)
+            except Exception:
+                pass
 
 CAREER_EMOJIS = {
     "Colonial Marine": "🔫",
@@ -993,7 +1057,7 @@ async def update_user_roles_and_nickname(user: discord.User, character: Characte
                     hoist=True,
                     mentionable=False
                 )
-                log_debug(f"Created role: {role_name}")
+                log_debug(f"Created role: {role_name}", enabled=True)
             except discord.Forbidden:
                 return False, f"Bot lacks permission to create role {role_name}"
             except discord.HTTPException as e:
@@ -1007,7 +1071,7 @@ async def update_user_roles_and_nickname(user: discord.User, character: Characte
         # Add the new career role
         try:
             await member.add_roles(career_role)
-            log_debug(f"Added role {career_role.name} to user {user.name}")
+            log_debug(f"Added role {career_role.name} to user {user.name}", enabled=True)
         except discord.Forbidden:
             return False, f"Bot lacks permission to add role {career_role.name}"
         except discord.HTTPException as e:
@@ -1024,7 +1088,7 @@ async def update_user_roles_and_nickname(user: discord.User, character: Characte
                     new_nickname = f"{emoji} {character.name[:max_name_length]}"
                 
                 await member.edit(nick=new_nickname)
-                log_debug(f"Updated nickname to {new_nickname} for user {user.name}")
+                log_debug(f"Updated nickname to {new_nickname} for user {user.name}", enabled=True)
             except discord.Forbidden:
                 return False, f"Bot lacks permission to update nickname for {user.name}"
             except discord.HTTPException as e:
@@ -1052,7 +1116,7 @@ async def remove_character_roles(user: discord.User, guild: discord.Guild) -> Tu
             if role in member.roles:
                 try:
                     await member.remove_roles(role)
-                    log_debug(f"Removed role {role.name} from user {user.name}")
+                    log_debug(f"Removed role {role.name} from user {user.name}", enabled=True)
                 except discord.Forbidden:
                     return False, f"Bot lacks permission to remove role {role.name}"
                 except discord.HTTPException as e:
@@ -1063,108 +1127,47 @@ async def remove_character_roles(user: discord.User, guild: discord.Guild) -> Tu
         logger.error(f"Error removing roles: {e}")
         return False, f"Error removing roles: {str(e)}"
 
-async def set_primary_character(user_id: str, char_id: str, guild: Optional[discord.Guild] = None) -> bool:
+async def set_primary_character(user_id: str, char_id: str, guild: Optional[discord.Guild] = None) -> tuple[bool, str]:
     """Set a character as the user's primary character and update roles."""
     try:
         user = await bot.fetch_user(int(user_id))
         character = data_manager.characters[user_id][char_id]
-        
         # Update primary character
-        data_manager.primary_characters[user_id] = char_id
+        data_manager.players[user_id]['primary_character'] = {char_id: True}
         data_manager.save_characters()
-        
         # Update roles in all guilds where both bot and user are present
         if guild:
             success, message = await update_user_roles_and_nickname(user, character, guild)
             if not success:
                 logger.error(f"Failed to update roles: {message}")
-                return False
+                return False, message
         else:
-            for guild in bot.guilds:
-                member = guild.get_member(user.id)
+            for g in bot.guilds:
+                member = g.get_member(user.id)
                 if member:
-                    success, message = await update_user_roles_and_nickname(user, character, guild)
+                    success, message = await update_user_roles_and_nickname(user, character, g)
                     if not success:
-                        logger.error(f"Failed to update roles in guild {guild.name}: {message}")
-        
-        return True
+                        logger.error(f"Failed to update roles in guild {g.name}: {message}")
+                        return False, message
+        log_debug(f"Saved character {character.name} ({char_id}) for {user.name}", enabled=True)
+        return True, f"Set {character.name} ({char_id}) as primary character for {user.name}."
     except Exception as e:
         logger.error(f"Error setting primary character: {e}")
-        return False
+        return False, f"Error setting primary character: {str(e)}"
 
-async def delete_character(user_id: str, char_id: str, guild: Optional[discord.Guild] = None) -> bool:
+async def delete_character(user_id: str, char_id: str, guild: Optional[discord.Guild] = None) -> tuple[bool, str]:
     """Delete a character and handle primary character reassignment."""
     try:
         user = await bot.fetch_user(int(user_id))
-        # Store if this was the primary character
-        was_primary = char_id == data_manager.primary_characters.get(user_id)
-        
-        # Delete the character
-        del data_manager.characters[user_id][char_id]
-        
-        # Handle primary character reassignment if needed
-        if was_primary:
-            remaining_chars = data_manager.get_user_characters(user_id)
-            if remaining_chars:
-                # Ask if they want to switch to another character
-                char_list = ["```text", ">> SELECT NEW PRIMARY CHARACTER <<", ""]
-                for cid, c in remaining_chars.items():
-                    char_list.append(f"[{cid}] {c.name} ({c.career})")
-                char_list.append("\nEnter the character ID to set as primary, or 'N' to create a new character.")
-                char_list.append("```")
-                
-                await user.send('\n'.join(char_list))
-                while True:
-                    choice = await wait_for_user_message(user)
-                    if choice.content.strip().upper() == "N":
-                        # Start character creation
-                        await user.send("```text\nStarting character creation process...\n```")
-                        await cmd_create(discord.Interaction(bot, user))
-                        return True
-                    
-                    # Check if the choice is a valid character ID
-                    if choice.content.strip() in remaining_chars:
-                        new_primary_id = choice.content.strip()
-                        await set_primary_character(user_id, new_primary_id, guild)
-                        await user.send(f"```text\n[OK] Set {remaining_chars[new_primary_id].name} as your primary character.\n```")
-                        return True
-                    else:
-                        await user.send("```text\n[ERROR] Invalid choice. Please enter a valid character ID or 'N'.\n```")
-            else:
-                # No characters left - ask if they want to create a new one
-                await user.send("""```text
-You have no characters remaining. Would you like to:
-[1] Create a new character
-[2] Continue without a character (you can still observe)
-
-Enter your choice (1 or 2):```""")
-                
-                while True:
-                    choice = await wait_for_user_message(user)
-                    if choice.content.strip() == "1":
-                        # Start character creation
-                        await user.send("```text\nStarting character creation process...\n```")
-                        await cmd_create(discord.Interaction(bot, user))
-                        return True
-                    elif choice.content.strip() == "2":
-                        # Remove all career roles
-                        if guild:
-                            success, message = await remove_character_roles(user, guild)
-                            if not success:
-                                logger.error(f"Failed to remove roles: {message}")
-                        # Remove from primary characters
-                        if user_id in data_manager.primary_characters:
-                            del data_manager.primary_characters[user_id]
-                        await user.send("```text\n[OK] You will continue without a character. You can still observe the game.\n```")
-                        return True
-                    else:
-                        await user.send("```text\n[ERROR] Please enter 1 or 2.\n```")
-        
-        data_manager.save_characters()
-        return True
+        # Actually delete the character using data_manager
+        deleted = data_manager.delete_character(user_id, char_id)
+        if deleted:
+            return True, f"[OK] Character deleted."
+        else:
+            return False, f"[ERROR] Failed to delete character."
     except Exception as e:
         logger.error(f"Error deleting character: {e}")
-        return False
+        return False, f"[ERROR] Exception occurred while deleting character: {str(e)}"
 
 @bot.tree.command(name="inventory", description="View your character's inventory (non-equipped items).")
 async def cmd_inventory(interaction: discord.Interaction):
@@ -1190,12 +1193,12 @@ async def cmd_loadout(interaction: discord.Interaction):
     char = data_manager.get_primary_character(user_id)
     if not char:
         if debug_logging_enabled:
-            log_debug(f"[FAILURE] Loadout command failed for {user}: No character found")
+            log_debug(f"Loadout command failed: no character found for user {user}", enabled=True)
         await interaction.response.send_message("```text\n[ERROR] No character sheet found.\n```", ephemeral=True)
         return
     if not char.loadout or not (char.loadout.suit or char.loadout.clothing or char.loadout.armor or char.loadout.accessories):
         if debug_logging_enabled:
-            log_debug(f"[SUCCESS] Loadout command for {user}: No wearables equipped")
+            log_debug(f"Loadout command success: no wearables equipped for user {user}", enabled=True)
         await interaction.response.send_message("```text\n[LOADOUT]\nNo wearables equipped.\n```", ephemeral=True)
         return
     # Use the WearableLoadout display method
@@ -1203,7 +1206,7 @@ async def cmd_loadout(interaction: discord.Interaction):
     lines.append(char.loadout.display_loadout())
     lines.append("```")
     if debug_logging_enabled:
-        log_debug(f"[SUCCESS] Loadout command for {user}: Displayed {len(char.loadout.get_all_items())} items")
+        log_debug(f"Loadout command success: displayed {len(char.loadout.get_all_items())} items for user {user}", enabled=True)
     await interaction.response.send_message('\n'.join(lines), ephemeral=True)
 
 @bot.tree.command(name="weapons", description="View your equipped weapons.")
@@ -1247,14 +1250,4 @@ async def cmd_weapons(interaction: discord.Interaction):
     lines.append("```")
     await interaction.response.send_message('\n'.join(lines), ephemeral=True)
 
-@bot.tree.command(name="debuglog", description="Toggle debug logging for troubleshooting.")
-@app_commands.checks.has_permissions(administrator=True)
-async def cmd_debug_log(interaction: discord.Interaction):
-    global debug_logging_enabled
-    debug_logging_enabled = not debug_logging_enabled
-    status = "enabled" if debug_logging_enabled else "disabled"
-    await interaction.response.send_message(f"```text\n[OK] Debug logging {status}.\n```", ephemeral=True)
-    log_debug(f"Debug logging {status} by {interaction.user}")
-
-# Start the bot
 bot.run(os.getenv('DISCORD_TOKEN'))
