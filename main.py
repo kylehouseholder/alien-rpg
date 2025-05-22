@@ -22,6 +22,10 @@ from character_creation.utils import (
     format_attribute_bar, format_skill_bar, get_paired_gear, get_article_for_item, find_wearable_by_name, find_weapon_by_name, handle_dice_roll_item,
     get_skill_and_attr, get_type_icon, get_ammo_icon, get_modifiers
 )
+from character_creation.shared import update_user_roles_and_nickname, remove_character_roles
+from character_creation.steps import (
+    select_personal_details, select_career, start_attr, assign_skills, select_talent, select_agenda, select_gear, select_signature_item, apply_starting_cash_and_finalize, finalize_character, edit_section
+)
 
 # Set up a formatter with no extra whitespace for all loggers
 formatter = logging.Formatter('[%(asctime)s] [%(levelname)-8s] %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
@@ -119,7 +123,7 @@ async def wait_for_user_message(user, *args, **kwargs):
         raise
 
 # --- PATCH send_dm to log all bot outputs ---
-async def send_dm(user, content, view=None):
+async def send_dm(user, content, view=None, show_cancel=False, message_to_edit=None):
     try:
         if debug_logging_enabled:
             # Improved prompt detection: only log if a line looks like an actual prompt
@@ -188,20 +192,35 @@ async def send_dm(user, content, view=None):
                 log_debug(f"[BOT] Prompting {user} for {prompt_type}")
             else:
                 log_debug(f"[BOT] Sending message to {user}")
-        return await user.send(content, view=view)
+        
+        # Check if this is a character creation session message
+        user_id = str(user.id)
+        if "character creation" in content.lower() and user_id in creation_sessions:
+            # Update last_activity for all sessions of this user
+            for char_id in creation_sessions[user_id]:
+                if hasattr(creation_sessions[user_id][char_id], 'last_activity'):
+                    creation_sessions[user_id][char_id].last_activity = datetime.datetime.now()
+        
+        if show_cancel:
+            if view is None:
+                view = CharacterCreationView()
+        else:
+            view = None
+        if message_to_edit is not None:
+            # Try to edit the existing message
+            try:
+                await message_to_edit.edit(content=content, view=view)
+                return message_to_edit
+            except Exception:
+                # If editing fails (e.g., message deleted), fall back to sending a new message
+                pass
+        # Otherwise, send a new message
+        msg = await user.send(content, view=view)
+        return msg
     except discord.Forbidden:
         if debug_logging_enabled:
             log_debug(f"[ERROR] Failed to send DM to {user}: Forbidden")
         return None
-
-from character_creation.steps import (
-    select_personal_details, select_career, start_attr, assign_skills, select_talent, select_agenda, select_gear, select_signature_item, apply_starting_cash_and_finalize, finalize_character, edit_section
-)
-
-from character_creation.utils import (
-    format_attribute_bar, format_skill_bar, get_paired_gear, get_article_for_item, find_wearable_by_name, find_weapon_by_name, handle_dice_roll_item,
-    get_skill_and_attr, get_type_icon, get_ammo_icon, get_modifiers
-)
 
 async def start_attr(user, char_id: str):
     user_id = str(user.id)
@@ -680,11 +699,49 @@ def find_weapon_by_name(name):
             return item
     return None
 
+class CharacterCreationView(View):
+    def __init__(self):
+        super().__init__(timeout=3600)  # 1 hour timeout
+        self.add_item(Button(label="Cancel Creation", style=discord.ButtonStyle.danger, custom_id="cancel_creation"))
+
+    async def on_timeout(self):
+        # Clean up any stale sessions when the view times out
+        for user_id in list(creation_sessions.keys()):
+            for char_id in list(creation_sessions[user_id].keys()):
+                if hasattr(creation_sessions[user_id][char_id], 'last_activity'):
+                    if (datetime.datetime.now() - creation_sessions[user_id][char_id].last_activity).total_seconds() > 3600:
+                        del creation_sessions[user_id][char_id]
+            if not creation_sessions[user_id]:
+                del creation_sessions[user_id]
+
 @bot.tree.command(name="createcharacter", description="Begin character creation.")
 async def cmd_create(interaction: discord.Interaction):
     user = interaction.user
     user_id = str(user.id)
-    # Generate new character ID using last 4 digits of user_id as prefix, then 01, 02, etc.
+    
+    # Clean up any stale sessions first
+    if user_id in creation_sessions:
+        current_time = datetime.datetime.now()
+        for session_id in list(creation_sessions[user_id].keys()):
+            if hasattr(creation_sessions[user_id][session_id], 'last_activity'):
+                if (current_time - creation_sessions[user_id][session_id].last_activity).total_seconds() > 3600:
+                    del creation_sessions[user_id][session_id]
+        if not creation_sessions[user_id]:
+            del creation_sessions[user_id]
+    
+    # Check if user is already in a creation session
+    if user_id in creation_sessions and any(session for session in creation_sessions[user_id].values()):
+        if debug_logging_enabled:
+            log_debug(f"[FAILURE] User {user_id} attempted to create character while session in progress")
+        view = CharacterCreationView()
+        await interaction.response.send_message(
+            "```text\n[ERROR] You already have a character creation session in progress. Please complete or cancel it first.\n```",
+            view=view,
+            ephemeral=True
+        )
+        return
+
+    # Generate new character ID
     prefix = user_id[-4:]
     user_chars = data_manager.get_user_characters(user_id)
     existing_ids = [cid for cid in user_chars.keys() if cid.startswith(prefix)]
@@ -694,26 +751,13 @@ async def cmd_create(interaction: discord.Interaction):
     else:
         next_suffix = 1
     char_id = f"{prefix}{next_suffix:02d}"
+    
     if debug_logging_enabled:
         log_debug(f"[OPERATION] Starting character creation for user {user_id}, char {char_id}")
-    
-    # Check if user is already in a creation session
-    if user_id in creation_sessions and any(session for session in creation_sessions[user_id].values()):
-        if debug_logging_enabled:
-            log_debug(f"[FAILURE] User {user_id} attempted to create character while session in progress")
-        await interaction.response.send_message(
-            "```text\n[ERROR] You already have a character creation session in progress. Please complete or cancel it first.\n```",
-            ephemeral=True
-        )
-        return
     
     # Initialize the user's session
     if user_id not in creation_sessions:
         creation_sessions[user_id] = {}
-    
-    # Clear any existing session for this character
-    if char_id in creation_sessions[user_id]:
-        del creation_sessions[user_id][char_id]
     
     # Initialize the character in the session with default values
     creation_sessions[user_id][char_id] = Character(
@@ -730,6 +774,24 @@ async def cmd_create(interaction: discord.Interaction):
         signature_item="",
         cash=0
     )
+    # Add last_activity timestamp
+    creation_sessions[user_id][char_id].last_activity = datetime.datetime.now()
+    
+    # Send initial DM to verify we can contact the user
+    try:
+        await user.send("```text\n[OK] Starting character creation process...\n```", view=CharacterCreationView())
+    except discord.Forbidden:
+        await interaction.response.send_message(
+            "```text\n[ERROR] I cannot send you DMs. Please enable DMs from server members and try again.\n```",
+            ephemeral=True
+        )
+        # Clean up the session since we can't proceed
+        if user_id in creation_sessions:
+            if char_id in creation_sessions[user_id]:
+                del creation_sessions[user_id][char_id]
+            if not creation_sessions[user_id]:
+                del creation_sessions[user_id]
+        return
     
     await interaction.response.send_message(
         "[OK] Check your DMs to begin character creation.",
@@ -737,15 +799,13 @@ async def cmd_create(interaction: discord.Interaction):
     )
     
     try:
-        await select_personal_details(user, char_id, send_dm, wait_for_user_message, creation_sessions, logger)
+        await select_personal_details(user, char_id, send_dm, wait_for_user_message, creation_sessions, logger, bot)
     except Exception as e:
         logger.error(f"Error in character creation: {e}")
-        if debug_logging_enabled:
-            log_debug(f"[ERROR] Character creation failed for user {user_id}: {str(e)}")
-        # Clean up the session
         if user_id in creation_sessions and char_id in creation_sessions[user_id]:
             del creation_sessions[user_id][char_id]
-        await user.send("```text\n[ERROR] Character creation failed. Please try again with /createcharacter.\n```")
+        await send_dm(user, "```text\n[ERROR] An error occurred during character creation. Please try again.\n```")
+        return
 
 @bot.tree.command(name="sheet", description="View your character sheet.")
 async def cmd_sheet(interaction: discord.Interaction):
@@ -940,9 +1000,26 @@ async def on_interaction(interaction: discord.Interaction):
             command_name = interaction.data.get('name', '') if interaction.type == discord.InteractionType.application_command else ''
             custom_id = interaction.data.get('custom_id', '') if interaction.type == discord.InteractionType.component else ''
             log_debug(f"Interaction: {interaction_type} from {interaction.user} - {command_name or custom_id}", enabled=True)
+        
         if interaction.type == discord.InteractionType.component:
             custom_id = interaction.data.get("custom_id", "")
-            if custom_id.startswith("delete_"):
+            if custom_id == "cancel_creation":
+                user_id = str(interaction.user.id)
+                if debug_logging_enabled:
+                    log_debug(f"[OPERATION] Canceling character creation for user {user_id}")
+                
+                # Clean up all sessions for this user
+                if user_id in creation_sessions:
+                    del creation_sessions[user_id]
+                    if debug_logging_enabled:
+                        log_debug(f"[SUCCESS] Cleared all sessions for user {user_id}")
+                
+                await interaction.response.send_message(
+                    "```text\n[OK] Character creation cancelled. You can now start a new character with /createcharacter.\n```",
+                    ephemeral=True
+                )
+                return
+            elif custom_id.startswith("delete_"):
                 char_id = custom_id.split("_")[1]
                 user_id = str(interaction.user.id)
                 user_chars = data_manager.get_user_characters(user_id)
@@ -955,6 +1032,16 @@ async def on_interaction(interaction: discord.Interaction):
                     # Refresh user_chars after deletion
                     user_chars = data_manager.get_user_characters(user_id)
                     if success:
+                        # If this was the primary character and there are other characters, set a new primary
+                        if char_id == list(data_manager.players[user_id]['primary_character'].keys())[0] and user_chars:
+                            # Get the first available character ID
+                            new_primary_id = list(user_chars.keys())[0]
+                            success, message = await set_primary_character(user_id, new_primary_id, interaction.guild)
+                            if success:
+                                message = f"Character deleted. {user_chars[new_primary_id].name} has been set as your new primary character."
+                            else:
+                                message = f"Character deleted, but failed to set new primary character: {message}"
+                        
                         await interaction.edit_original_response(
                             content=f"```text\n{message}\n```",
                             view=CharacterListView(user_chars, list(data_manager.players[user_id]['primary_character'].keys())[0]) if user_chars else None
@@ -970,6 +1057,24 @@ async def on_interaction(interaction: discord.Interaction):
                         log_debug(f"Failed to delete character {char_id} for {interaction.user.name}: Character not found", enabled=True)
                     await interaction.response.defer(ephemeral=True)
                     await interaction.edit_original_response(content="```text\n[ERROR] Character not found.\n```", view=None)
+            elif custom_id == "back":
+                user_id = str(interaction.user.id)
+                user_chars = data_manager.get_user_characters(user_id)
+                if user_chars:
+                    await interaction.response.defer(ephemeral=True)
+                    char_list = ["```text", ">> YOUR CHARACTERS <<", ""]
+                    for char_id, char in user_chars.items():
+                        is_primary = char_id == list(data_manager.players[user_id]['primary_character'].keys())[0]
+                        char_list.append(f"{char.name} ({char.career}){' ★' if is_primary else ''}")
+                    char_list.append("Use the buttons below to manage your characters.")
+                    char_list.append("```")
+                    await interaction.edit_original_response(
+                        content='\n'.join(char_list),
+                        view=CharacterListView(user_chars, list(data_manager.players[user_id]['primary_character'].keys())[0])
+                    )
+                else:
+                    await interaction.response.defer(ephemeral=True)
+                    await interaction.edit_original_response(content="```text\n[ERROR] No characters found.\n```", view=None)
             elif custom_id.startswith("primary_"):
                 char_id = custom_id.split("_")[1]
                 user_id = str(interaction.user.id)
@@ -998,7 +1103,37 @@ async def on_interaction(interaction: discord.Interaction):
                     if debug_logging_enabled:
                         log_debug(f"[OPERATION] Viewing character {user_chars[char_id].name} ({char_id}) for {interaction.user.name}")
                     await interaction.response.defer(ephemeral=True)
-                    await interaction.edit_original_response(content=f"```text\nDisplaying character sheet for {user_chars[char_id].name}...\n```", view=CharacterListView(user_chars, list(data_manager.players[user_id]['primary_character'].keys())[0]))
+                    
+                    # Generate character sheet display
+                    char = user_chars[char_id]
+                    sheet = ["```text", ">> CHARACTER SHEET <<"]
+                    sheet.append(f"\nName: {char.name}")
+                    sheet.append(f"Career: {char.career}")
+                    sheet.append("\nAttributes:")
+                    for attr in ["Strength", "Agility", "Wits", "Empathy"]:
+                        value = getattr(char.attributes, attr.lower())
+                        sheet.append(f"  {attr}: {value} {format_attribute_bar(value)}")
+                    sheet.append("\nSkills:")
+                    for skill_name, value in char.skills.__dict__.items():
+                        if value > 0:
+                            name = skill_name.replace('_', ' ').title()
+                            sheet.append(f"  {name}: {value} {format_skill_bar(value)}")
+                    sheet.append(f"\nTalent: {char.talent}")
+                    sheet.append(f"Personal Agenda: {char.agenda}")
+                    sheet.append("\nGear:")
+                    for item in char.inventory.items:
+                        if isinstance(item, ConsumableItem):
+                            form = getattr(item, 'form', 'unit')
+                            form_plural = getattr(item, 'form_plural', 'units')
+                            sheet.append(f"  • {item.name} (x{item.quantity} {form if item.quantity == 1 else form_plural})")
+                        else:
+                            sheet.append(f"  • {str(item)}")
+                    
+                    sheet.append(f"\nSignature Item: {char.signature_item}")
+                    sheet.append(f"Cash: ${char.cash}")
+                    sheet.append("```")
+                    
+                    await interaction.edit_original_response(content='\n'.join(sheet), view=CharacterSheetView(user_chars, list(data_manager.players[user_id]['primary_character'].keys())[0], char_id))
                     if debug_logging_enabled:
                         log_debug(f"[SUCCESS] Displayed character sheet for {user_chars[char_id].name} ({char_id})", enabled=True)
                 else:
@@ -1006,6 +1141,73 @@ async def on_interaction(interaction: discord.Interaction):
                         log_debug(f"[FAILURE] Failed to view character {char_id} for {interaction.user.name}: Character not found", enabled=True)
                     await interaction.response.defer(ephemeral=True)
                     await interaction.edit_original_response(content="```text\n[ERROR] Character not found.\n```", view=None)
+            elif custom_id.startswith("inventory_"):
+                char_id = custom_id.split("_")[1]
+                user_id = str(interaction.user.id)
+                user_chars = data_manager.get_user_characters(user_id)
+                if char_id in user_chars:
+                    char = user_chars[char_id]
+                    if not char.inventory.items:
+                        content = "```text\n[INVENTORY]\nYour inventory is empty.\n```"
+                    else:
+                        lines = ["```text", ">> INVENTORY <<"]
+                        for item in char.inventory.items:
+                            if isinstance(item, ConsumableItem):
+                                form = getattr(item, 'form', 'unit')
+                                form_plural = getattr(item, 'form_plural', 'units')
+                                lines.append(f"• {item.name} (x{item.quantity} {form if item.quantity == 1 else form_plural})")
+                            else:
+                                lines.append(f"• {str(item)}")
+                        lines.append("```")
+                        content = '\n'.join(lines)
+                    await interaction.response.defer(ephemeral=True)
+                    await interaction.edit_original_response(content=content, view=CharacterSheetView(user_chars, list(data_manager.players[user_id]['primary_character'].keys())[0], char_id, "inventory"))
+            elif custom_id.startswith("weapons_"):
+                char_id = custom_id.split("_")[1]
+                user_id = str(interaction.user.id)
+                user_chars = data_manager.get_user_characters(user_id)
+                if char_id in user_chars:
+                    char = user_chars[char_id]
+                    if not char.weapons:
+                        content = "```text\n[WEAPONS]\nNo weapons equipped.\n```"
+                    else:
+                        lines = ["```text", ">> WEAPONS <<\n"]
+                        # Primary weapon is the first in the list
+                        primary = char.weapons[0]
+                        skill, attr = get_skill_and_attr(primary)
+                        type_icon = get_type_icon(primary)
+                        ammo_icon = get_ammo_icon(primary)
+                        mods = get_modifiers(primary)
+                        lines.append("Primary Weapon")
+                        lines.append(f"{primary.name} | {type_icon} [{primary.damage_type}] | {ammo_icon} [ammo reloads] | 🎲 [{skill} + {attr} + *{mods}]")
+                        lines.append(f"💥 [damage] {primary.damage} | ✨ [bonus] +{primary.bonus} | 🎯[range]  {primary.range}")
+                        if primary.lore:
+                            lines.append(f'"{primary.lore}"')
+                        lines.append("")
+                        # Other weapons
+                        if len(char.weapons) > 1:
+                            lines.append("Other Weapons:")
+                            for i, weapon in enumerate(char.weapons[1:], 1):
+                                lines.append(f"{i}. {weapon.name}")
+                        lines.append("```")
+                        content = '\n'.join(lines)
+                    await interaction.response.defer(ephemeral=True)
+                    await interaction.edit_original_response(content=content, view=CharacterSheetView(user_chars, list(data_manager.players[user_id]['primary_character'].keys())[0], char_id, "weapons"))
+            elif custom_id.startswith("loadout_"):
+                char_id = custom_id.split("_")[1]
+                user_id = str(interaction.user.id)
+                user_chars = data_manager.get_user_characters(user_id)
+                if char_id in user_chars:
+                    char = user_chars[char_id]
+                    if not char.loadout or not (char.loadout.suit or char.loadout.clothing or char.loadout.armor or char.loadout.accessories):
+                        content = "```text\n[LOADOUT]\nNo wearables equipped.\n```"
+                    else:
+                        lines = ["```text"]
+                        lines.append(char.loadout.display_loadout())
+                        lines.append("```")
+                        content = '\n'.join(lines)
+                    await interaction.response.defer(ephemeral=True)
+                    await interaction.edit_original_response(content=content, view=CharacterSheetView(user_chars, list(data_manager.players[user_id]['primary_character'].keys())[0], char_id, "loadout"))
             elif custom_id == "exit":
                 if debug_logging_enabled:
                     log_debug(f"User {interaction.user} exited character management", enabled=True)
@@ -1243,9 +1445,7 @@ async def cmd_weapons(interaction: discord.Interaction):
         lines.append("")
         lines.append("Options:")
         for i, weapon in enumerate(char.weapons[1:], 1):
-            lines.append(f"[{i}] Switch to {weapon.name}")
-        lines.append(f"[I] More info about primary weapon")
-        for i, weapon in enumerate(char.weapons[1:], 1):
+            lines.append(f"[I] More info about primary weapon")
             lines.append(f"[I{i}] More info about {weapon.name}")
     lines.append("```")
     await interaction.response.send_message('\n'.join(lines), ephemeral=True)
