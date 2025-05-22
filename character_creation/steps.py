@@ -14,12 +14,14 @@ from character_creation.utils import (
     format_attribute_bar, format_skill_bar, get_paired_gear, get_article_for_item, find_wearable_by_name, find_weapon_by_name, handle_dice_roll_item
 )
 import os
+from character_creation.shared import update_user_roles_and_nickname
 
 # NOTE: The following must be provided by the caller (main.py):
 # - send_dm
 # - wait_for_user_message
 # - creation_sessions
 # - logger
+# - bot
 
 # All functions below require send_dm, wait_for_user_message, and creation_sessions to be passed in as arguments or available in the calling context.
 
@@ -35,33 +37,14 @@ def log_error(msg: str, enabled: bool = True):
     if enabled:
         logger.error(msg)
 
-async def select_personal_details(user, char_id: str, send_dm, wait_for_user_message, creation_sessions, logger):
+async def select_personal_details(user, char_id: str, send_dm, wait_for_user_message, creation_sessions, logger, bot):
     user_id = str(user.id)
-    # Generate new character ID using last 4 digits of user_id as prefix, then 2-digit serial (01-99)
-    prefix = user_id[-4:]
-    existing_ids = [cid for cid in data_manager.get_user_characters(user_id).keys() if cid.startswith(prefix)]
-    used_serials = set()
-    for cid in existing_ids:
-        serial = cid[len(prefix):]
-        if serial.isdigit():
-            used_serials.add(int(serial))
-    # Find the lowest available serial from 1 to 99
-    for i in range(1, 100):
-        if i not in used_serials:
-            next_serial = i
-            break
-    new_char_id = f"{prefix}{next_serial:02d}"
-    char_id = new_char_id
     log_this_action = True
     log_debug(f"Begin select_personal_details for user {user_id}, char {char_id}", enabled=log_this_action)
     if user_id not in creation_sessions or char_id not in creation_sessions[user_id]:
         log_error(f"No valid session found for user {user_id}, char {char_id}", enabled=log_this_action)
-        await send_dm(user, "```text\n[ERROR] Character creation session lost. Please start over with /createcharacter.\n```")
+        await send_dm(user, "```text\n[ERROR] Character creation session lost. Please start over with /createcharacter.\n```", show_cancel=True)
         return
-    if user_id in creation_sessions and char_id in creation_sessions[user_id]:
-        del creation_sessions[user_id][char_id]
-    if user_id not in creation_sessions:
-        creation_sessions[user_id] = {}
     creation_sessions[user_id][char_id] = Character(
         id=char_id,
         name="",
@@ -77,6 +60,7 @@ async def select_personal_details(user, char_id: str, send_dm, wait_for_user_mes
         cash=0
     )
     try:
+        # 1. ASCII art intro (persistent)
         await send_dm(user, r"""```text
                     __                             ___       __  
    ____  ____  _____/ /__________  ____ ___  ____  / (_)___  / /__
@@ -88,8 +72,9 @@ async def select_personal_details(user, char_id: str, send_dm, wait_for_user_mes
 >>>......INITIALIZING PERSONNEL INTAKE PROTOCOL //
 >>>......CONNECTING TO WEYLAND-YUTANI HUMAN RESOURCE NODE 381-A //
                   
-```""")
+```""", show_cancel=True)
         await asyncio.sleep(0.3)
+        # 2. Welcome/HR intro (persistent)
         await send_dm(user, r"""```text
  
 WELCOME USER. //
@@ -116,8 +101,9 @@ This is of no concern to Weyland-Yutani or any of its corporate subsidiaries, af
 >>>......PREPARING CHARACTER CREATION PROTOCOL //
 >>>......AWAITING INITIAL INPUT //
                   
-```""")
+```""", show_cancel=False)
         await asyncio.sleep(0.3)
+        # 3. Step 00 intro (persistent)
         await send_dm(user, r"""```text
 
 >>>......CHARACTER CREATION PROTOCOL ONLINE //
@@ -130,99 +116,88 @@ This data will be used for identification and record-keeping purposes only. //
 All responses must be truthful and accurate. /
 Falsification of records is grounds for immediate termination. //
                   
-```""")
+```""", show_cancel=False)
         await asyncio.sleep(0.3)
-        await send_dm(user, """```text
+        # 4. First prompt (editable)
+        msg = await send_dm(user, """```text
 Enter your character's full name:
 (Only letters, spaces, and hyphens allowed.)
-```""")
-        while True:
-            name_msg = await wait_for_user_message(user)
-            name = name_msg.content.strip()
-            if re.match(r'^[A-Za-z\- ]+$', name) and len(name) > 1:
-                creation_sessions[user_id][char_id].name = name
-                break
+```""", show_cancel=True)
+        creation_sessions[user_id][char_id]['dm_message'] = msg
+        name_msg = await wait_for_user_message(user)
+        name = name_msg.content.strip()
+        if re.match(r'^[A-Za-z\- ]+$', name) and len(name) > 1:
+            creation_sessions[user_id][char_id].name = name
+        else:
+            msg = await send_dm(user, """```text\n[ERROR] Please enter a valid name using only letters, spaces, and hyphens.\nTry again:\n```""", show_cancel=True, message_to_edit=creation_sessions[user_id][char_id].get('dm_message'))
+            creation_sessions[user_id][char_id]['dm_message'] = msg
+        msg = await send_dm(user, """```text\nSelect your character's gender identity:\n[1] Male\n[2] Female\n[3] Non-binary\n[4] Prefer not to specify\n[5] Other (please specify)\n\nEnter the number of your choice:```""", show_cancel=True, message_to_edit=creation_sessions[user_id][char_id].get('dm_message'))
+        creation_sessions[user_id][char_id]['dm_message'] = msg
+        gender_msg = await wait_for_user_message(user)
+        choice = gender_msg.content.strip()
+        if choice == "1":
+            creation_sessions[user_id][char_id].gender = "Male"
+        elif choice == "2":
+            creation_sessions[user_id][char_id].gender = "Female"
+        elif choice == "3":
+            creation_sessions[user_id][char_id].gender = "Non-binary"
+        elif choice == "4":
+            creation_sessions[user_id][char_id].gender = "Prefer not to specify"
+        elif choice == "5":
+            msg = await send_dm(user, """```text\nPlease specify your gender identity:```""", show_cancel=True, message_to_edit=creation_sessions[user_id][char_id].get('dm_message'))
+            creation_sessions[user_id][char_id]['dm_message'] = msg
+            custom_msg = await wait_for_user_message(user)
+            creation_sessions[user_id][char_id].gender = custom_msg.content.strip()
+        else:
+            msg = await send_dm(user, "```text\n[ERROR] Please enter a number between 1 and 5```", show_cancel=True, message_to_edit=creation_sessions[user_id][char_id].get('dm_message'))
+            creation_sessions[user_id][char_id]['dm_message'] = msg
+        msg = await send_dm(user, "```text\nEnter your character's age (18-120):```", show_cancel=True, message_to_edit=creation_sessions[user_id][char_id].get('dm_message'))
+        creation_sessions[user_id][char_id]['dm_message'] = msg
+        age_msg = await wait_for_user_message(user)
+        try:
+            age = int(age_msg.content.strip())
+            if 18 <= age <= 120:
+                creation_sessions[user_id][char_id].age = age
             else:
-                await send_dm(user, """```text
-[ERROR] Please enter a valid name using only letters, spaces, and hyphens.
-Try again:
-```""")
-        await send_dm(user, """```text
-Select your character's gender identity:
-[1] Male
-[2] Female
-[3] Non-binary
-[4] Prefer not to specify
-[5] Other (please specify)
-
-Enter the number of your choice:```""")
-        while True:
-            gender_msg = await wait_for_user_message(user)
-            choice = gender_msg.content.strip()
-            if choice == "1":
-                creation_sessions[user_id][char_id].gender = "Male"
-                break
-            elif choice == "2":
-                creation_sessions[user_id][char_id].gender = "Female"
-                break
-            elif choice == "3":
-                creation_sessions[user_id][char_id].gender = "Non-binary"
-                break
-            elif choice == "4":
-                creation_sessions[user_id][char_id].gender = "Prefer not to specify"
-                break
-            elif choice == "5":
-                await send_dm(user, "```text\nPlease specify your gender identity:```")
-                custom_msg = await wait_for_user_message(user)
-                creation_sessions[user_id][char_id].gender = custom_msg.content.strip()
-                break
-            else:
-                await send_dm(user, "```text\n[ERROR] Please enter a number between 1 and 5```")
-                continue
-        await send_dm(user, "```text\nEnter your character's age (18-120):```")
-        while True:
-            age_msg = await wait_for_user_message(user)
-            try:
-                age = int(age_msg.content.strip())
-                if 18 <= age <= 120:
-                    creation_sessions[user_id][char_id].age = age
-                    break
-                else:
-                    await send_dm(user, "```text\n[ERROR] Age must be between 18 and 120```")
-            except ValueError:
-                await send_dm(user, "```text\n[ERROR] Please enter a valid number```")
+                msg = await send_dm(user, "```text\n[ERROR] Age must be between 18 and 120```", show_cancel=True, message_to_edit=creation_sessions[user_id][char_id].get('dm_message'))
+                creation_sessions[user_id][char_id]['dm_message'] = msg
+        except ValueError:
+            msg = await send_dm(user, "```text\n[ERROR] Please enter a valid number```", show_cancel=True, message_to_edit=creation_sessions[user_id][char_id].get('dm_message'))
+            creation_sessions[user_id][char_id]['dm_message'] = msg
         char = creation_sessions[user_id][char_id]
-        await send_dm(user, f"""```text
+        msg = await send_dm(user, f"""```text
 >> PERSONAL DETAILS SUMMARY <<
 
 Name: {char.name}
 Gender: {char.gender}
 Age: {char.age}
 
-Confirm these details? (Y/N)```""")
+Confirm these details? (Y/N)```""", show_cancel=True, message_to_edit=creation_sessions[user_id][char_id].get('dm_message'))
+        creation_sessions[user_id][char_id]['dm_message'] = msg
         confirm = await wait_for_user_message(user)
         if confirm.content.strip().upper() == "Y":
             log_debug(f"Personal details confirmed for user {user_id}, char {char_id}", enabled=log_this_action)
-            await send_dm(user, "```text\n[OK] Personal details saved. Proceeding to Career Selection...\n```")
+            msg = await send_dm(user, "```text\n[OK] Personal details saved. Proceeding to Career Selection...\n```", show_cancel=True, message_to_edit=creation_sessions[user_id][char_id].get('dm_message'))
+            creation_sessions[user_id][char_id]['dm_message'] = msg
             await asyncio.sleep(0.3)
-            await select_career(user, char_id, send_dm, wait_for_user_message, creation_sessions, logger)
+            await select_career(user, char_id, send_dm, wait_for_user_message, creation_sessions, logger, bot)
         else:
-            await send_dm(user, "```text\n[RESET] Let's enter the details again.\n```")
-            await select_personal_details(user, char_id, send_dm, wait_for_user_message, creation_sessions, logger)
+            msg = await send_dm(user, "```text\n[RESET] Let's enter the details again.\n```", show_cancel=True, message_to_edit=creation_sessions[user_id][char_id].get('dm_message'))
+            creation_sessions[user_id][char_id]['dm_message'] = msg
+            await select_personal_details(user, char_id, send_dm, wait_for_user_message, creation_sessions, logger, bot)
     except Exception as e:
         log_error(f"Error in personal details selection: {e}", enabled=log_this_action)
-        if user_id in creation_sessions and char_id in creation_sessions[user_id]:
-            del creation_sessions[user_id][char_id]
-        await send_dm(user, "```text\n[ERROR] Character creation failed. Please try again with /createcharacter.\n```")
+        msg = await send_dm(user, "```text\n[ERROR] Character creation failed. Please try again with /createcharacter.\n```", show_cancel=True)
+        creation_sessions[user_id][char_id]['dm_message'] = msg
         raise
 
-async def select_career(user, char_id: str, send_dm, wait_for_user_message, creation_sessions, logger):
+async def select_career(user, char_id: str, send_dm, wait_for_user_message, creation_sessions, logger, bot):
     user_id = str(user.id)
     log_this_action = True
     log_debug(f"Starting career selection for user {user_id}, char {char_id}", enabled=log_this_action)
     if user_id not in creation_sessions or char_id not in creation_sessions[user_id]:
         log_error(f"No character found in session for user {user_id}, char {char_id}", enabled=log_this_action)
-        await send_dm(user, "```text\n[ERROR] Character creation session lost. Please start over with /createcharacter.\n```")
+        await send_dm(user, "```text\n[ERROR] Character creation session lost. Please start over with /createcharacter.\n```", show_cancel=True)
         return
     char = creation_sessions[user_id][char_id]
     log_debug(f"Found character in session: {char.name}", enabled=log_this_action)
@@ -237,15 +212,17 @@ async def select_career(user, char_id: str, send_dm, wait_for_user_message, crea
         menu += "\n[pN] View detailed (p)rofile for career N - i.e. p9"
         menu += "\n\n> PLEASE PROCEED WITH YOUR SELECTION: [NUMBER] /\n```"
         return menu
-    await send_dm(user, get_menu())
+    msg = await send_dm(user, get_menu(), show_cancel=True, message_to_edit=creation_sessions[user_id][char_id].get('dm_message'))
+    creation_sessions[user_id][char_id]['dm_message'] = msg
     while True:
-        msg = await wait_for_user_message(user)
-        choice = msg.content.strip()
+        user_msg = await wait_for_user_message(user)
+        choice = user_msg.content.strip()
         match = re.match(r"^[dp](\d+)$", choice, re.IGNORECASE)
         if match:
             idx = int(match.group(1)) - 1
             if idx < 0 or idx >= len(career_names):
-                await send_dm(user, f"```text\n[ERROR] Invalid career number. Please choose 1-{len(career_names)}\n```")
+                msg = await send_dm(user, f"```text\n[ERROR] Invalid career number. Please choose 1-{len(career_names)}\n```", show_cancel=True, message_to_edit=creation_sessions[user_id][char_id].get('dm_message'))
+                creation_sessions[user_id][char_id]['dm_message'] = msg
                 continue
             cname = career_names[idx]
             c = careers[cname]
@@ -254,7 +231,8 @@ async def select_career(user, char_id: str, send_dm, wait_for_user_message, crea
                 if 'gameplay_desc' in c:
                     details.append(c['gameplay_desc'])
                 details.append("\nWould you like to select this career and continue? (Y/N)\n```")
-                await send_dm(user, '\n'.join(details))
+                msg = await send_dm(user, '\n'.join(details), show_cancel=True, message_to_edit=creation_sessions[user_id][char_id].get('dm_message'))
+                creation_sessions[user_id][char_id]['dm_message'] = msg
             else:
                 details = ["```text", f">> CAREER PROFILE: {cname} <<\n"]
                 if 'tagline' in c:
@@ -267,36 +245,43 @@ async def select_career(user, char_id: str, send_dm, wait_for_user_message, crea
                 details.append(f"Key Skills: {', '.join(c['key_skills'])}")
                 details.append(f"Talents: {', '.join(c['talents'])}")
                 details.append("\nWould you like to select this career and continue? (Y/N)\n```")
-                await send_dm(user, '\n'.join(details))
+                msg = await send_dm(user, '\n'.join(details), show_cancel=True, message_to_edit=creation_sessions[user_id][char_id].get('dm_message'))
+                creation_sessions[user_id][char_id]['dm_message'] = msg
             while True:
                 sel = await wait_for_user_message(user)
                 ans = sel.content.strip().upper()
                 if ans == "Y":
                     creation_sessions[user_id][char_id].career = cname
-                    await send_dm(user, """```text\n[OK] Career selected. Proceeding to Attributes...\n```""")
+                    msg = await send_dm(user, """```text\n[OK] Career selected. Proceeding to Attributes...\n```""", show_cancel=True, message_to_edit=creation_sessions[user_id][char_id].get('dm_message'))
+                    creation_sessions[user_id][char_id]['dm_message'] = msg
                     await asyncio.sleep(0.3)
-                    await start_attr(user, char_id, send_dm, wait_for_user_message, creation_sessions, logger)
+                    await start_attr(user, char_id, send_dm, wait_for_user_message, creation_sessions, logger, bot)
                     return
                 elif ans == "N":
-                    await send_dm(user, get_menu())
+                    msg = await send_dm(user, get_menu(), show_cancel=True, message_to_edit=creation_sessions[user_id][char_id].get('dm_message'))
+                    creation_sessions[user_id][char_id]['dm_message'] = msg
                     break
                 else:
-                    await send_dm(user, "```text\n[ERROR] Please reply Y or N.\n```")
+                    msg = await send_dm(user, "```text\n[ERROR] Please reply Y or N.\n```", show_cancel=True, message_to_edit=creation_sessions[user_id][char_id].get('dm_message'))
+                    creation_sessions[user_id][char_id]['dm_message'] = msg
+                    continue
             continue
         if choice.isdigit() and 1 <= int(choice) <= len(career_names):
             cname = career_names[int(choice)-1]
             creation_sessions[user_id][char_id].career = cname
-            await send_dm(user, f"""```text\n[OK] Career selected: {cname}. Proceeding to Attributes...\n```""")
+            msg = await send_dm(user, f"""```text\n[OK] Career selected: {cname}. Proceeding to Attributes...\n```""", show_cancel=True, message_to_edit=creation_sessions[user_id][char_id].get('dm_message'))
+            creation_sessions[user_id][char_id]['dm_message'] = msg
             await asyncio.sleep(0.3)
-            await start_attr(user, char_id, send_dm, wait_for_user_message, creation_sessions, logger)
+            await start_attr(user, char_id, send_dm, wait_for_user_message, creation_sessions, logger, bot)
             return
-        await send_dm(user, "```text\n[ERROR] Invalid input. Enter a number, dN, or pN.\n```")
+        msg = await send_dm(user, "```text\n[ERROR] Invalid input. Enter a number, dN, or pN.\n```", show_cancel=True, message_to_edit=creation_sessions[user_id][char_id].get('dm_message'))
+        creation_sessions[user_id][char_id]['dm_message'] = msg
 
-async def start_attr(user, char_id: str, send_dm, wait_for_user_message, creation_sessions, logger):
+async def start_attr(user, char_id: str, send_dm, wait_for_user_message, creation_sessions, logger, bot):
     user_id = str(user.id)
     careers = data_manager.get_playergen()["Careers"]
     if user_id not in creation_sessions or char_id not in creation_sessions[user_id]:
-        await send_dm(user, "```text\n[ERROR] No career found – start with /createcharacter.\n```")
+        await send_dm(user, "```text\n[ERROR] No career found – start with /createcharacter.\n```", show_cancel=True)
         return
     char = creation_sessions[user_id][char_id]
     key_attr = careers[char.career]["key_attribute"]
@@ -351,26 +336,31 @@ async def start_attr(user, char_id: str, send_dm, wait_for_user_message, creatio
                     bar = format_attribute_bar(value, is_key)
                     display.append(f"{attr:<8}  {value} {bar}")
                 display.append("\nConfirm allocation? (Y/N)```")
-                await send_dm(user, "\n".join(display))
+                msg = await send_dm(user, "\n".join(display), show_cancel=True, message_to_edit=creation_sessions[user_id][char_id].get('dm_message'))
+                creation_sessions[user_id][char_id]['dm_message'] = msg
                 confirm = await wait_for_user_message(user)
                 if confirm.content.strip().upper() == "Y":
-                    await send_dm(user, "```text\n[OK] Attributes saved. Proceeding to Skills...\n```")
-                    await assign_skills(user, char_id, send_dm, wait_for_user_message, creation_sessions, logger)
+                    await send_dm(user, "```text\n[OK] Attributes saved. Proceeding to Skills...\n```", show_cancel=True, message_to_edit=creation_sessions[user_id][char_id].get('dm_message'))
+                    creation_sessions[user_id][char_id]['dm_message'] = msg
+                    await assign_skills(user, char_id, send_dm, wait_for_user_message, creation_sessions, logger, bot)
                     return
                 elif confirm.content.strip().upper() == "N":
-                    await send_dm(user, """```text\n[RESET] Let's enter the values again.\n```""")
+                    await send_dm(user, """```text\n[RESET] Let's enter the values again.\n```""", show_cancel=True, message_to_edit=creation_sessions[user_id][char_id].get('dm_message'))
+                    creation_sessions[user_id][char_id]['dm_message'] = msg
                     for attr in attr_order:
                         setattr(char.attributes, attr.lower(), 2)
                     points_remaining = 6
                     current_attr_index = 0
                     break
                 else:
-                    await send_dm(user, "```text\n[ERROR] Please enter Y or N\n```")
+                    msg = await send_dm(user, "```text\n[ERROR] Please enter Y or N\n```", show_cancel=True, message_to_edit=creation_sessions[user_id][char_id].get('dm_message'))
+                    creation_sessions[user_id][char_id]['dm_message'] = msg
                     continue
             continue
-        await send_dm(user, "\n".join(display))
-        msg = await wait_for_user_message(user)
-        cmd = msg.content.strip().upper()
+        msg = await send_dm(user, "\n".join(display), show_cancel=True, message_to_edit=creation_sessions[user_id][char_id].get('dm_message'))
+        creation_sessions[user_id][char_id]['dm_message'] = msg
+        user_msg = await wait_for_user_message(user)
+        cmd = user_msg.content.strip().upper()
         vals = None
         manual_nav = False
         multi_match = re.match(r"^(\d+)[,\s]+(\d+)[,\s]+(\d+)[,\s]+(\d+)$", cmd)
@@ -383,10 +373,12 @@ async def start_attr(user, char_id: str, send_dm, wait_for_user_message, creatio
             max_vals = [5 if attr == key_attr else 4 for attr in attr_order]
             total_points = sum([v - 2 for v in vals])
             if any(vals[i] < min_vals[i] or vals[i] > max_vals[i] for i in range(4)):
-                await send_dm(user, f"```text\n[ERROR] Invalid allocation. Each attribute must be in range (key: 2-5, others: 2-4).\n```")
+                msg = await send_dm(user, f"```text\n[ERROR] Invalid allocation. Each attribute must be in range (key: 2-5, others: 2-4).\n```", show_cancel=True, message_to_edit=creation_sessions[user_id][char_id].get('dm_message'))
+                creation_sessions[user_id][char_id]['dm_message'] = msg
                 continue
             if total_points > 6:
-                await send_dm(user, f"```text\n[ERROR] You used more than 6 points.\n```")
+                msg = await send_dm(user, f"```text\n[ERROR] You used more than 6 points.\n```", show_cancel=True, message_to_edit=creation_sessions[user_id][char_id].get('dm_message'))
+                creation_sessions[user_id][char_id]['dm_message'] = msg
                 continue
             for i, attr in enumerate(attr_order):
                 setattr(char.attributes, attr.lower(), vals[i])
@@ -417,7 +409,8 @@ async def start_attr(user, char_id: str, send_dm, wait_for_user_message, creatio
             is_key = current_attr == key_attr
             max_add = min(points_remaining, (5 if is_key else 4) - value)
             if points < 0 or points > max_add:
-                await send_dm(user, f"```text\n[ERROR] Please enter a number between 0 and {max_add}\n```")
+                msg = await send_dm(user, f"```text\n[ERROR] Please enter a number between 0 and {max_add}\n```", show_cancel=True, message_to_edit=creation_sessions[user_id][char_id].get('dm_message'))
+                creation_sessions[user_id][char_id]['dm_message'] = msg
                 continue
             setattr(char.attributes, current_attr.lower(), value + points)
             points_remaining -= points
@@ -430,16 +423,17 @@ async def start_attr(user, char_id: str, send_dm, wait_for_user_message, creatio
                     break
             continue
         else:
-            await send_dm(user, "```text\n[ERROR] Please enter a valid command\n```")
+            msg = await send_dm(user, "```text\n[ERROR] Please enter a valid command\n```", show_cancel=True, message_to_edit=creation_sessions[user_id][char_id].get('dm_message'))
+            creation_sessions[user_id][char_id]['dm_message'] = msg
             continue
 
-async def assign_skills(user, char_id: str, send_dm, wait_for_user_message, creation_sessions, logger):
+async def assign_skills(user, char_id: str, send_dm, wait_for_user_message, creation_sessions, logger, bot):
     log_this_action = True
     user_id = str(user.id)
     log_debug(f"Begin assign_skills for user {user_id}, char {char_id}", enabled=log_this_action)
     careers = data_manager.get_playergen()["Careers"]
     if user_id not in creation_sessions or char_id not in creation_sessions[user_id]:
-        await send_dm(user, "```text\n[ERROR] No career found in session. Please start over with /createcharacter.\n```")
+        await send_dm(user, "```text\n[ERROR] No career found in session. Please start over with /createcharacter.\n```", show_cancel=True)
         return
     char = creation_sessions[user_id][char_id]
     key_skills = careers[char.career]["key_skills"]
@@ -462,9 +456,10 @@ async def assign_skills(user, char_id: str, send_dm, wait_for_user_message, crea
         display.append("Enter a number to add to the current skill, or enter 3 numbers to assign all points at once.")
         display.append("N proceeds to general skill selection, R resets these key skills.")
         display.append("```")
-        await send_dm(user, "\n".join(display))
-        msg = await wait_for_user_message(user)
-        cmd = msg.content.strip().upper()
+        msg = await send_dm(user, "\n".join(display), show_cancel=True, message_to_edit=creation_sessions[user_id][char_id].get('dm_message'))
+        creation_sessions[user_id][char_id]['dm_message'] = msg
+        user_msg = await wait_for_user_message(user)
+        cmd = user_msg.content.strip().upper()
         vals = None
         manual_nav = False
         multi_match = re.match(r"^(\d+)[,\s]+(\d+)[,\s]+(\d+)$", cmd)
@@ -474,10 +469,12 @@ async def assign_skills(user, char_id: str, send_dm, wait_for_user_message, crea
             vals = [int(x) for x in cmd]
         if vals:
             if any(v < 0 or v > 3 for v in vals):
-                await send_dm(user, "```text\n[ERROR] Each key skill must be 0-3.\n```")
+                msg = await send_dm(user, "```text\n[ERROR] Each key skill must be 0-3.\n```", show_cancel=True, message_to_edit=creation_sessions[user_id][char_id].get('dm_message'))
+                creation_sessions[user_id][char_id]['dm_message'] = msg
                 continue
             if sum(vals) > points_remaining:
-                await send_dm(user, f"```text\n[ERROR] Total points exceed available ({points_remaining}).\n```")
+                msg = await send_dm(user, f"```text\n[ERROR] Total points exceed available ({points_remaining}).\n```", show_cancel=True, message_to_edit=creation_sessions[user_id][char_id].get('dm_message'))
+                creation_sessions[user_id][char_id]['dm_message'] = msg
                 continue
             for i, skill in enumerate(key_skills):
                 skill_attr = skill.lower().replace(" ", "_")
@@ -500,7 +497,8 @@ async def assign_skills(user, char_id: str, send_dm, wait_for_user_message, crea
             value = getattr(char.skills, skill_attr)
             max_add = min(points_remaining, 3 - value)
             if pts < 0 or pts > max_add:
-                await send_dm(user, f"```text\n[ERROR] Must be 0-{max_add}.\n```")
+                msg = await send_dm(user, f"```text\n[ERROR] Must be 0-{max_add}.\n```", show_cancel=True, message_to_edit=creation_sessions[user_id][char_id].get('dm_message'))
+                creation_sessions[user_id][char_id]['dm_message'] = msg
                 continue
             setattr(char.skills, skill_attr, value + pts)
             points_remaining -= pts
@@ -512,45 +510,52 @@ async def assign_skills(user, char_id: str, send_dm, wait_for_user_message, crea
                     break
             continue
         else:
-            await send_dm(user, "```text\n[ERROR] Enter three numbers (0-3) for key skills, a number to add to the current skill, N to proceed, or R to reset.\n```")
+            msg = await send_dm(user, "```text\n[ERROR] Enter three numbers (0-3) for key skills, a number to add to the current skill, N to proceed, or R to reset.\n```", show_cancel=True, message_to_edit=creation_sessions[user_id][char_id].get('dm_message'))
+            creation_sessions[user_id][char_id]['dm_message'] = msg
             continue
     available_skills = [s for s in all_skills if s not in key_skills]
     while True:
         skill_list = '\n'.join(f"[{i+1}] {s}" for i, s in enumerate(available_skills) if getattr(char.skills, s.lower().replace(" ", "_")) == 0)
-        await send_dm(user, f"""```text\nEnter general skills to assign (comma/space-separated indices, up to {points_remaining}):\nType B to go back to key skills.\n{skill_list}\n```""")
+        msg = await send_dm(user, f"""```text\nEnter general skills to assign (comma/space-separated indices, up to {points_remaining}):\nType B to go back to key skills.\n{skill_list}\n```""", show_cancel=True, message_to_edit=creation_sessions[user_id][char_id].get('dm_message'))
+        creation_sessions[user_id][char_id]['dm_message'] = msg
         if points_remaining <= 0:
             break
-        msg = await wait_for_user_message(user)
-        cmd = msg.content.strip().upper()
+        user_msg = await wait_for_user_message(user)
+        cmd = user_msg.content.strip().upper()
         if cmd == "B" or cmd == "BACK":
-            await assign_skills(user, char_id, send_dm, wait_for_user_message, creation_sessions, logger)
+            await assign_skills(user, char_id, send_dm, wait_for_user_message, creation_sessions, logger, bot)
             return
         indices = re.findall(r"\d+", cmd)
         if indices:
             indices = [int(i)-1 for i in indices]
             if any(i < 0 or i >= len(available_skills) for i in indices):
-                await send_dm(user, f"```text\n[ERROR] Invalid skill index.\n```")
+                msg = await send_dm(user, f"```text\n[ERROR] Invalid skill index.\n```", show_cancel=True, message_to_edit=creation_sessions[user_id][char_id].get('dm_message'))
+                creation_sessions[user_id][char_id]['dm_message'] = msg
                 continue
             if len(indices) > points_remaining:
-                await send_dm(user, f"```text\n[ERROR] You selected more skills than you have points ({points_remaining}).\n```")
+                msg = await send_dm(user, f"```text\n[ERROR] You selected more skills than you have points ({points_remaining}).\n```", show_cancel=True, message_to_edit=creation_sessions[user_id][char_id].get('dm_message'))
+                creation_sessions[user_id][char_id]['dm_message'] = msg
                 continue
             if len(indices) == 1:
                 skill = available_skills[indices[0]]
                 skill_attr = skill.lower().replace(" ", "_")
                 if getattr(char.skills, skill_attr) > 0:
-                    await send_dm(user, f"```text\n[ERROR] You have already assigned a point to {skill}.\n```")
+                    msg = await send_dm(user, f"```text\n[ERROR] You have already assigned a point to {skill}.\n```", show_cancel=True, message_to_edit=creation_sessions[user_id][char_id].get('dm_message'))
+                    creation_sessions[user_id][char_id]['dm_message'] = msg
                     continue
                 setattr(char.skills, skill_attr, 1)
                 points_remaining -= 1
                 if points_remaining > 0:
-                    await send_dm(user, f"```text\n[OK] Selected {skill}. You can make {points_remaining} more selection{'s' if points_remaining != 1 else ''}.\n```")
+                    msg = await send_dm(user, f"```text\n[OK] Selected {skill}. You can make {points_remaining} more selection{'s' if points_remaining != 1 else ''}.\n```", show_cancel=True, message_to_edit=creation_sessions[user_id][char_id].get('dm_message'))
+                    creation_sessions[user_id][char_id]['dm_message'] = msg
                     continue
                 break
             for i in indices[:points_remaining]:
                 skill = available_skills[i]
                 skill_attr = skill.lower().replace(" ", "_")
                 if getattr(char.skills, skill_attr) > 0:
-                    await send_dm(user, f"```text\n[ERROR] You have already assigned a point to {skill}.\n```")
+                    msg = await send_dm(user, f"```text\n[ERROR] You have already assigned a point to {skill}.\n```", show_cancel=True, message_to_edit=creation_sessions[user_id][char_id].get('dm_message'))
+                    creation_sessions[user_id][char_id]['dm_message'] = msg
                     continue
                 setattr(char.skills, skill_attr, 1)
             points_remaining -= min(len(indices), points_remaining)
@@ -558,7 +563,8 @@ async def assign_skills(user, char_id: str, send_dm, wait_for_user_message, crea
         elif cmd.upper() == "X":
             break
         else:
-            await send_dm(user, "```text\n[ERROR] Enter skill indices separated by commas or spaces, B to go back, or X to finish.\n```")
+            msg = await send_dm(user, "```text\n[ERROR] Enter skill indices separated by commas or spaces, B to go back, or X to finish.\n```", show_cancel=True, message_to_edit=creation_sessions[user_id][char_id].get('dm_message'))
+            creation_sessions[user_id][char_id]['dm_message'] = msg
             continue
     display = ["```text", ">> Final Skill Allocation <<\n"]
     display.append("==========================")
@@ -575,29 +581,32 @@ async def assign_skills(user, char_id: str, send_dm, wait_for_user_message, crea
             display.append(f"{skill:<15} {value} {format_skill_bar(value)}")
     display.append("\nConfirm allocation? (Y/N)")
     display.append("```")
-    await send_dm(user, "\n".join(display))
+    msg = await send_dm(user, "\n".join(display), show_cancel=True, message_to_edit=creation_sessions[user_id][char_id].get('dm_message'))
+    creation_sessions[user_id][char_id]['dm_message'] = msg
     confirm = await wait_for_user_message(user)
     if confirm.content.strip().upper() == "Y":
         log_debug(f"Skills confirmed for user {user_id}, char {char_id}", enabled=log_this_action)
-        await send_dm(user, "```text\n[OK] Skills saved. Proceeding to Talent...\n```")
-        await select_talent(user, char_id, send_dm, wait_for_user_message, creation_sessions, logger)
+        await send_dm(user, "```text\n[OK] Skills saved. Proceeding to Talent...\n```", show_cancel=True, message_to_edit=creation_sessions[user_id][char_id].get('dm_message'))
+        creation_sessions[user_id][char_id]['dm_message'] = msg
+        await select_talent(user, char_id, send_dm, wait_for_user_message, creation_sessions, logger, bot)
         return
     else:
         log_debug(f"Skills reset for user {user_id}, char {char_id}", enabled=log_this_action)
-        await send_dm(user, "```text\n[RESET] Let's reassign skills.\n```")
+        await send_dm(user, "```text\n[RESET] Let's reassign skills.\n```", show_cancel=True, message_to_edit=creation_sessions[user_id][char_id].get('dm_message'))
+        creation_sessions[user_id][char_id]['dm_message'] = msg
         for skill in key_skills + available_skills:
             skill_attr = skill.lower().replace(" ", "_")
             setattr(char.skills, skill_attr, 0)
-        await assign_skills(user, char_id, send_dm, wait_for_user_message, creation_sessions, logger)
+        await assign_skills(user, char_id, send_dm, wait_for_user_message, creation_sessions, logger, bot)
         return
 
-async def select_talent(user, char_id: str, send_dm, wait_for_user_message, creation_sessions, logger):
+async def select_talent(user, char_id: str, send_dm, wait_for_user_message, creation_sessions, logger, bot):
     log_this_action = True
     user_id = str(user.id)
     log_debug(f"Begin select_talent for user {user_id}, char {char_id}", enabled=log_this_action)
     careers = data_manager.get_playergen()["Careers"]
     if user_id not in creation_sessions or char_id not in creation_sessions[user_id]:
-        await send_dm(user, "```text\n[ERROR] No career found in session. Please start over with /createcharacter.\n```")
+        await send_dm(user, "```text\n[ERROR] No career found in session. Please start over with /createcharacter.\n```", show_cancel=True)
         return
     char = creation_sessions[user_id][char_id]
     career_talents = careers[char.career]["talents"]
@@ -614,29 +623,33 @@ async def select_talent(user, char_id: str, send_dm, wait_for_user_message, crea
         menu.append(f"   {description}")
         menu.append("")
     menu.append("\nEnter the number of your chosen talent:```")
+    msg = await send_dm(user, '\n'.join(menu), show_cancel=True, message_to_edit=creation_sessions[user_id][char_id].get('dm_message'))
+    creation_sessions[user_id][char_id]['dm_message'] = msg
     while True:
-        await send_dm(user, '\n'.join(menu))
-        msg = await wait_for_user_message(user)
-        if not msg.content.isdigit():
-            await send_dm(user, "```text\n[ERROR] Please enter a number\n```")
+        user_msg = await wait_for_user_message(user)
+        if not user_msg.content.isdigit():
+            msg = await send_dm(user, "```text\n[ERROR] Please enter a number\n```", show_cancel=True, message_to_edit=creation_sessions[user_id][char_id].get('dm_message'))
+            creation_sessions[user_id][char_id]['dm_message'] = msg
             continue
-        choice = int(msg.content)
+        choice = int(user_msg.content)
         if choice < 1 or choice > len(career_talents):
-            await send_dm(user, f"```text\n[ERROR] Please enter a number between 1 and {len(career_talents)}\n```")
+            msg = await send_dm(user, f"```text\n[ERROR] Please enter a number between 1 and {len(career_talents)}\n```", show_cancel=True, message_to_edit=creation_sessions[user_id][char_id].get('dm_message'))
+            creation_sessions[user_id][char_id]['dm_message'] = msg
             continue
         selected = career_talents[choice - 1]
         char.talent = selected
-        await send_dm(user, f"```text\n[OK] Talent saved. Proceeding to Personal Agenda...\n```")
-        await select_agenda(user, char_id, send_dm, wait_for_user_message, creation_sessions, logger)
+        msg = await send_dm(user, f"```text\n[OK] Talent saved. Proceeding to Personal Agenda...\n```", show_cancel=True, message_to_edit=creation_sessions[user_id][char_id].get('dm_message'))
+        creation_sessions[user_id][char_id]['dm_message'] = msg
+        await select_agenda(user, char_id, send_dm, wait_for_user_message, creation_sessions, logger, bot)
         return
 
-async def select_agenda(user, char_id: str, send_dm, wait_for_user_message, creation_sessions, logger):
+async def select_agenda(user, char_id: str, send_dm, wait_for_user_message, creation_sessions, logger, bot):
     log_this_action = True
     user_id = str(user.id)
     log_debug(f"Begin select_agenda for user {user_id}, char {char_id}", enabled=log_this_action)
     careers = data_manager.get_playergen()["Careers"]
     if user_id not in creation_sessions or char_id not in creation_sessions[user_id]:
-        await send_dm(user, "```text\n[ERROR] No career found in session. Please start over with /createcharacter.\n```")
+        await send_dm(user, "```text\n[ERROR] No career found in session. Please start over with /createcharacter.\n```", show_cancel=True)
         return
     char = creation_sessions[user_id][char_id]
     agendas = careers[char.career]["personal_agendas"]
@@ -647,28 +660,32 @@ async def select_agenda(user, char_id: str, send_dm, wait_for_user_message, crea
         menu.append(f"[{i}] {agenda}")
     menu.append("\nEnter the number of your chosen agenda:```")
     while True:
-        await send_dm(user, '\n'.join(menu))
-        msg = await wait_for_user_message(user)
-        if not msg.content.isdigit():
-            await send_dm(user, "[ERROR] Please enter a number")
+        msg = await send_dm(user, '\n'.join(menu), show_cancel=True, message_to_edit=creation_sessions[user_id][char_id].get('dm_message'))
+        creation_sessions[user_id][char_id]['dm_message'] = msg
+        user_msg = await wait_for_user_message(user)
+        if not user_msg.content.isdigit():
+            msg = await send_dm(user, "[ERROR] Please enter a number", show_cancel=True, message_to_edit=creation_sessions[user_id][char_id].get('dm_message'))
+            creation_sessions[user_id][char_id]['dm_message'] = msg
             continue
-        choice = int(msg.content)
+        choice = int(user_msg.content)
         if choice < 1 or choice > len(agendas):
-            await send_dm(user, f"[ERROR] Please enter a number between 1 and {len(agendas)}")
+            msg = await send_dm(user, f"[ERROR] Please enter a number between 1 and {len(agendas)}", show_cancel=True, message_to_edit=creation_sessions[user_id][char_id].get('dm_message'))
+            creation_sessions[user_id][char_id]['dm_message'] = msg
             continue
         selected = agendas[choice - 1]
         char.agenda = selected
-        await send_dm(user, "[OK] Agenda saved. Proceeding to Gear...")
-        await select_gear(user, char_id, send_dm, wait_for_user_message, creation_sessions, logger)
+        msg = await send_dm(user, "[OK] Agenda saved. Proceeding to Gear...", show_cancel=True, message_to_edit=creation_sessions[user_id][char_id].get('dm_message'))
+        creation_sessions[user_id][char_id]['dm_message'] = msg
+        await select_gear(user, char_id, send_dm, wait_for_user_message, creation_sessions, logger, bot)
         return
 
-async def select_gear(user, char_id: str, send_dm, wait_for_user_message, creation_sessions, logger):
+async def select_gear(user, char_id: str, send_dm, wait_for_user_message, creation_sessions, logger, bot):
     log_this_action = True
     user_id = str(user.id)
     log_debug(f"Begin select_gear for user {user_id}, char {char_id}", enabled=log_this_action)
     careers = data_manager.get_playergen()["Careers"]
     if user_id not in creation_sessions or char_id not in creation_sessions[user_id]:
-        await send_dm(user, "```text\n[ERROR] No career found in session. Please start over with /createcharacter.\n```")
+        await send_dm(user, "```text\n[ERROR] No career found in session. Please start over with /createcharacter.\n```", show_cancel=True)
         return
     char = creation_sessions[user_id][char_id]
     gear_list = careers[char.career]["starting_gear"]
@@ -680,14 +697,17 @@ async def select_gear(user, char_id: str, send_dm, wait_for_user_message, creati
         menu.append(f"[{i}] {item}")
     menu.append("\nEnter the number of your chosen gear:```")
     while True:
-        await send_dm(user, '\n'.join(menu))
-        msg = await wait_for_user_message(user)
-        if not msg.content.isdigit():
-            await send_dm(user, "[ERROR] Please enter a number")
+        msg = await send_dm(user, '\n'.join(menu), show_cancel=True, message_to_edit=creation_sessions[user_id][char_id].get('dm_message'))
+        creation_sessions[user_id][char_id]['dm_message'] = msg
+        user_msg = await wait_for_user_message(user)
+        if not user_msg.content.isdigit():
+            msg = await send_dm(user, "[ERROR] Please enter a number", show_cancel=True, message_to_edit=creation_sessions[user_id][char_id].get('dm_message'))
+            creation_sessions[user_id][char_id]['dm_message'] = msg
             continue
-        choice = int(msg.content)
+        choice = int(user_msg.content)
         if choice < 1 or choice > len(gear_list):
-            await send_dm(user, f"[ERROR] Please enter a number between 1 and {len(gear_list)}")
+            msg = await send_dm(user, f"[ERROR] Please enter a number between 1 and {len(gear_list)}", show_cancel=True, message_to_edit=creation_sessions[user_id][char_id].get('dm_message'))
+            creation_sessions[user_id][char_id]['dm_message'] = msg
             continue
         first_item = gear_list[choice - 1]
         item_name, quantity = handle_dice_roll_item(first_item)
@@ -715,14 +735,17 @@ async def select_gear(user, char_id: str, send_dm, wait_for_user_message, creati
             menu.append(f"[{i}] {item}")
         menu.append("\nEnter the number of your chosen gear:```")
         while True:
-            await send_dm(user, '\n'.join(menu))
-            msg = await wait_for_user_message(user)
-            if not msg.content.isdigit():
-                await send_dm(user, "[ERROR] Please enter a number")
+            msg = await send_dm(user, '\n'.join(menu), show_cancel=True, message_to_edit=creation_sessions[user_id][char_id].get('dm_message'))
+            creation_sessions[user_id][char_id]['dm_message'] = msg
+            user_msg = await wait_for_user_message(user)
+            if not user_msg.content.isdigit():
+                msg = await send_dm(user, "[ERROR] Please enter a number", show_cancel=True, message_to_edit=creation_sessions[user_id][char_id].get('dm_message'))
+                creation_sessions[user_id][char_id]['dm_message'] = msg
                 continue
-            choice = int(msg.content)
+            choice = int(user_msg.content)
             if choice < 1 or choice > len(remaining_gear):
-                await send_dm(user, f"[ERROR] Please enter a number between 1 and {len(remaining_gear)}")
+                msg = await send_dm(user, f"[ERROR] Please enter a number between 1 and {len(remaining_gear)}", show_cancel=True, message_to_edit=creation_sessions[user_id][char_id].get('dm_message'))
+                creation_sessions[user_id][char_id]['dm_message'] = msg
                 continue
             second_item = remaining_gear[choice - 1]
             item_name, quantity = handle_dice_roll_item(second_item)
@@ -733,29 +756,27 @@ async def select_gear(user, char_id: str, send_dm, wait_for_user_message, creati
                 ))
             else:
                 char.inventory.add_item(Item(name=item_name))
-            await send_dm(user, f"""```text
->> SELECTED GEAR <<
-1. {first_item}
-2. {second_item}
-
-Confirm these selections? (Y/N)```""")
-            confirm = await wait_for_user_message(user)
-            if confirm.content.strip().upper() == "Y":
-                await send_dm(user, "[OK] Gear saved. Proceeding to Signature Item...")
-                await select_signature_item(user, char_id, send_dm, wait_for_user_message, creation_sessions, logger)
+            msg = await send_dm(user, f"""```text\n>> SELECTED GEAR <<\n1. {first_item}\n2. {second_item}\n\nConfirm these selections? (Y/N)```""", show_cancel=True, message_to_edit=creation_sessions[user_id][char_id].get('dm_message'))
+            creation_sessions[user_id][char_id]['dm_message'] = msg
+            confirm_msg = await wait_for_user_message(user)
+            if confirm_msg.content.strip().upper() == "Y":
+                msg = await send_dm(user, "[OK] Gear saved. Proceeding to Signature Item...", show_cancel=True, message_to_edit=creation_sessions[user_id][char_id].get('dm_message'))
+                creation_sessions[user_id][char_id]['dm_message'] = msg
+                await select_signature_item(user, char_id, send_dm, wait_for_user_message, creation_sessions, logger, bot)
                 return
             else:
-                await send_dm(user, "[RESET] Let's select gear again.")
+                msg = await send_dm(user, "[RESET] Let's select gear again.", show_cancel=True, message_to_edit=creation_sessions[user_id][char_id].get('dm_message'))
+                creation_sessions[user_id][char_id]['dm_message'] = msg
                 char.inventory = Inventory()
                 break
 
-async def select_signature_item(user, char_id: str, send_dm, wait_for_user_message, creation_sessions, logger):
+async def select_signature_item(user, char_id: str, send_dm, wait_for_user_message, creation_sessions, logger, bot):
     log_this_action = True
     user_id = str(user.id)
     log_debug(f"Begin select_signature_item for user {user_id}, char {char_id}", enabled=log_this_action)
     careers = data_manager.get_playergen()["Careers"]
     if user_id not in creation_sessions or char_id not in creation_sessions[user_id]:
-        await send_dm(user, "```text\n[ERROR] No career found in session. Please start over with /createcharacter.\n```")
+        await send_dm(user, "```text\n[ERROR] No career found in session. Please start over with /createcharacter.\n```", show_cancel=True)
         return
     char = creation_sessions[user_id][char_id]
     items = careers[char.career]["signature_items"]
@@ -766,126 +787,56 @@ async def select_signature_item(user, char_id: str, send_dm, wait_for_user_messa
         menu.append(f"[{i}] {item}")
     menu.append("\nEnter the number of your chosen item:```")
     while True:
-        await send_dm(user, '\n'.join(menu))
-        msg = await wait_for_user_message(user)
-        if not msg.content.isdigit():
-            await send_dm(user, "[ERROR] Please enter a number")
+        msg = await send_dm(user, '\n'.join(menu), show_cancel=True, message_to_edit=creation_sessions[user_id][char_id].get('dm_message'))
+        creation_sessions[user_id][char_id]['dm_message'] = msg
+        user_msg = await wait_for_user_message(user)
+        if not user_msg.content.isdigit():
+            msg = await send_dm(user, "[ERROR] Please enter a number", show_cancel=True, message_to_edit=creation_sessions[user_id][char_id].get('dm_message'))
+            creation_sessions[user_id][char_id]['dm_message'] = msg
             continue
-        choice = int(msg.content)
+        choice = int(user_msg.content)
         if choice < 1 or choice > len(items):
-            await send_dm(user, f"[ERROR] Please enter a number between 1 and {len(items)}")
+            msg = await send_dm(user, f"[ERROR] Please enter a number between 1 and {len(items)}", show_cancel=True, message_to_edit=creation_sessions[user_id][char_id].get('dm_message'))
+            creation_sessions[user_id][char_id]['dm_message'] = msg
             continue
         selected = items[choice - 1]
         char.signature_item = selected
-        await send_dm(user, "[OK] Signature Item saved. Proceeding to Cash...")
-        await apply_starting_cash_and_finalize(user, char_id, send_dm, wait_for_user_message, creation_sessions, logger)
+        msg = await send_dm(user, "[OK] Signature Item saved. Proceeding to Cash...", show_cancel=True, message_to_edit=creation_sessions[user_id][char_id].get('dm_message'))
+        creation_sessions[user_id][char_id]['dm_message'] = msg
+        await apply_starting_cash_and_finalize(user, char_id, send_dm, wait_for_user_message, creation_sessions, logger, bot)
         return
 
-async def apply_starting_cash_and_finalize(user, char_id: str, send_dm, wait_for_user_message, creation_sessions, logger):
+async def apply_starting_cash_and_finalize(user, char_id: str, send_dm, wait_for_user_message, creation_sessions, logger, bot):
     log_this_action = True
     user_id = str(user.id)
     careers = data_manager.get_playergen()["Careers"]
     if user_id not in creation_sessions or char_id not in creation_sessions[user_id]:
-        await send_dm(user, "```text\n[ERROR] No character in progress. Please start over with /createcharacter.\n```")
+        await send_dm(user, "```text\n[ERROR] No character in progress. Please start over with /createcharacter.\n```", show_cancel=True)
         return
     char = creation_sessions[user_id][char_id]
     formula = careers[char.career]["cash"]
     amt = DiceRoll.roll(formula)
     char.cash = amt
     await send_dm(user, "[OK] Cash assigned. Proceeding to final review...")
-    await finalize_character(user, char_id, send_dm, wait_for_user_message, creation_sessions, logger, finalstep=True)
+    await finalize_character(user, char_id, send_dm, wait_for_user_message, creation_sessions, logger, bot, finalstep=True)
 
-async def finalize_character(user, char_id: str, send_dm, wait_for_user_message, creation_sessions, logger, finalstep=False):
+async def finalize_character(user, char_id: str, send_dm, wait_for_user_message, creation_sessions, logger, bot, finalstep=False):
     log_this_action = True
     user_id = str(user.id)
     log_debug(f"Begin finalize_character for user {user_id}, char {char_id}", enabled=log_this_action)
     careers = data_manager.get_playergen()["Careers"]
     if user_id not in creation_sessions or char_id not in creation_sessions[user_id]:
-        await send_dm(user, "```text\n[ERROR] No character in progress. Please start over with /createcharacter.\n```")
+        await send_dm(user, "```text\n[ERROR] No character in progress. Please start over with /createcharacter.\n```", show_cancel=True)
         return
     char = creation_sessions[user_id][char_id]
-    while True:
-        summary = ["```text", ">> CHARACTER SUMMARY <<"]
-        summary.append("\nPlease review...")
-        summary.append(f"\n[A] Character: {char.name}, {char.gender}, {char.age}")
-        summary.append(f"\n[B] Career: {char.career}")
-        summary.append(f"\n[C] Talent: {char.talent}")
-        summary.append(f"\n[D] Agenda: {char.agenda}")
-        summary.append(" \n[E] Attributes:")
-        for attr in ["Strength", "Agility", "Wits", "Empathy"]:
-            value = getattr(char.attributes, attr.lower())
-            summary.append(f"  {attr}: {value}")
-        summary.append("\n[F] Skills:")
-        for skill_name, value in char.skills.__dict__.items():
-            if value > 0:
-                summary.append(f"  {skill_name.replace('_', ' ').title()}: {value}")
-        summary.append(f"\n[G] Gear:")
-        for item in char.inventory.items:
-            if isinstance(item, ConsumableItem):
-                form = getattr(item, 'form', 'unit')
-                form_plural = getattr(item, 'form_plural', 'units')
-                summary.append(f"  • {item.name} (x{item.quantity} {form if item.quantity == 1 else form_plural})")
-            else:
-                summary.append(f"  • {str(item)}")
-        summary.append(f"  • Cash: ${char.cash}")
-        summary.append(f"\n[H] Signature Item: {char.signature_item}")
-        summary.append("\nOptions:")
-        summary.append("[1] CONFIRM - Lock in character")
-        summary.append("[0] RESTART - Purge this sheet, start over at the beginning.")
-        summary.append("\nEnter any letter to return to that section and make changes.")
-        summary.append("```")
-        await send_dm(user, '\n'.join(summary))
-        msg = await wait_for_user_message(user)
-        choice = msg.content.strip().upper()
-        if choice == "1":
-            log_debug(f"Saving character {char.name} for user {user_id}", enabled=True)
-            if user_id not in data_manager.characters:
-                data_manager.characters[user_id] = {}
-            weapon_names = {w.name for w in find_weapon_by_name.__globals__['all_weapon_items']}
-            new_inventory = []
-            for item in char.inventory.items:
-                if item.name in weapon_names:
-                    from models.weapon_item import WeaponItem
-                    if not isinstance(item, WeaponItem):
-                        canonical = next((w for w in find_weapon_by_name.__globals__['all_weapon_items'] if w.name == item.name), None)
-                        if canonical:
-                            char.weapons.append(canonical)
-                        else:
-                            char.weapons.append(WeaponItem(name=item.name))
-                    else:
-                        char.weapons.append(item)
-                else:
-                    new_inventory.append(item)
-            char.inventory.items = new_inventory
-            data_manager.characters[user_id][char_id] = char
-            data_manager.save_characters()
-            del creation_sessions[user_id][char_id]
-            await send_dm(user, """```text\n[OK] Character creation complete!\nYour character has been saved and is ready for use.\n```""")
-            return
-        elif choice == "0":
-            await send_dm(user, """```text\nAre you sure you want to restart character creation? This will erase all progress. (Y/N)\n```""")
-            confirm = await wait_for_user_message(user)
-            if confirm.content.strip().upper() == "Y":
-                del creation_sessions[user_id][char_id]
-                await send_dm(user, """```text\n[RESET] Starting character creation over...\n```""")
-                await select_career(user, char_id, send_dm, wait_for_user_message, creation_sessions, logger)
-                return
-            else:
-                continue
-        elif finalstep and choice in ["A", "B", "C", "D", "E", "F", "G", "H"]:
-            await edit_section(user, char_id, choice, send_dm, wait_for_user_message, creation_sessions, logger)
-            continue
-        else:
-            await send_dm(user, "```text\n[ERROR] Please enter a valid option.\n```")
-            continue
+    msg = await send_dm(user, "```text\n[OK] Character creation completed. Proceeding to edit section...\n```", show_cancel=True, message_to_edit=creation_sessions[user_id][char_id].get('dm_message'))
+    creation_sessions[user_id][char_id]['dm_message'] = msg
+    await edit_section(user, char_id, send_dm, wait_for_user_message, creation_sessions, logger, bot)
 
-async def edit_section(user, char_id, section, send_dm, wait_for_user_message, creation_sessions, logger):
+async def edit_section(user, char_id, section, send_dm, wait_for_user_message, creation_sessions, logger, bot):
     log_this_action = True
     user_id = str(user.id)
     log_debug(f"Begin edit_section for user {user_id}, char {char_id}, section {section}", enabled=log_this_action)
-    await send_dm(user, f"```text\n[EDIT] Section {section} editing not yet implemented. Returning to summary...\n```")
+    msg = await send_dm(user, f"```text\n[EDIT] Section {section} editing not yet implemented. Returning to summary...\n```", show_cancel=True, message_to_edit=creation_sessions[user_id][char_id].get('dm_message'))
+    creation_sessions[user_id][char_id]['dm_message'] = msg
     return
-
-# Each function should take send_dm, wait_for_user_message, and creation_sessions as arguments, and use them instead of relying on globals.
-
-# ... (functions will be pasted here in the next step) ... 
