@@ -1,11 +1,11 @@
 {
   "characters": {
     "203249116795371520": {
-      "152001": {
-        "Name": "Stag Taters",
-        "Career": "Colonial Marine",
-        "Gender": "Female",
-        "Age": 23,
+      "152004": {
+        "Name": "Higgy Bother",
+        "Career": "Company Agent",
+        "Gender": "Male",
+        "Age": 44,
         "Attributes": {
           "Strength": 4,
           "Agility": 4,
@@ -14,23 +14,23 @@
         },
         "Skills": {
           "Heavy_Machinery": 1,
-          "Stamina": 3,
-          "Close_Combat": 3,
+          "Stamina": 0,
+          "Close_Combat": 0,
           "Mobility": 0,
           "Piloting": 0,
-          "Ranged_Combat": 3,
-          "Observation": 0,
-          "Comtech": 0,
+          "Ranged_Combat": 0,
+          "Observation": 3,
+          "Comtech": 3,
           "Survival": 0,
-          "Manipulation": 0,
+          "Manipulation": 3,
           "Command": 0,
           "Medical_Aid": 0
         },
-        "Talent": "Banter",
-        "Agenda": "You are a decorated hero, you need to defend your reputation. At all costs.",
+        "Talent": "Cunning",
+        "Agenda": "You are greedy for power and never miss an opportunity to get ahead.",
         "Inventory": [
           {
-            "name": "M41A Pulse Rifle",
+            "name": "Leather briefcase",
             "description": "",
             "quantity": 1,
             "stackable": true,
@@ -38,7 +38,7 @@
             "price": 0
           },
           {
-            "name": "M314 Motion Tracker",
+            "name": "Gold-plated pen",
             "description": "",
             "quantity": 1,
             "stackable": true,
@@ -46,57 +46,7 @@
             "price": 0
           }
         ],
-        "Signature Item": "Bullet that you survived",
-        "Cash": 600,
-        "Loadout": null,
-        "Weapons": []
-      },
-      "152002": {
-        "Name": "Peep Wwaters",
-        "Career": "Colonial Marine",
-        "Gender": "Male",
-        "Age": 44,
-        "Attributes": {
-          "Strength": 5,
-          "Agility": 4,
-          "Wits": 3,
-          "Empathy": 2
-        },
-        "Skills": {
-          "Heavy_Machinery": 1,
-          "Stamina": 3,
-          "Close_Combat": 3,
-          "Mobility": 0,
-          "Piloting": 0,
-          "Ranged_Combat": 3,
-          "Observation": 0,
-          "Comtech": 0,
-          "Survival": 0,
-          "Manipulation": 0,
-          "Command": 0,
-          "Medical_Aid": 0
-        },
-        "Talent": "Banter",
-        "Agenda": "You are a decorated hero, you need to defend your reputation. At all costs.",
-        "Inventory": [
-          {
-            "name": "M41A Pulse Rifle",
-            "description": "",
-            "quantity": 1,
-            "stackable": true,
-            "condition": 1,
-            "price": 0
-          },
-          {
-            "name": "2 G2 Electroshock Grenades",
-            "description": "",
-            "quantity": 1,
-            "stackable": true,
-            "condition": 1,
-            "price": 0
-          }
-        ],
-        "Signature Item": "Bullet that you survived",
+        "Signature Item": "Letter of corporate authorization",
         "Cash": 500,
         "Loadout": null,
         "Weapons": []
@@ -306,14 +256,11 @@
       "name": "zt.robinson",
       "characters": [
         {
-          "152001": "Stag Taters"
-        },
-        {
-          "152002": "Peep Wwaters"
+          "152004": "Higgy Bother"
         }
       ],
       "primary_character": {
-        "152001": true
+        "152004": true
       }
     },
     "142085565892788224": {
