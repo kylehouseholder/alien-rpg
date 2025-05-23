@@ -1,6 +1,6 @@
 #!/bin/bash
 
-SESSION="alien-bot"
+SESSION="gem9k-bot"
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 SESSION_PATH="$SCRIPT_DIR/sessionBot.sh"
 LOG_PATH="$SCRIPT_DIR/bot.log"

@@ -1,0 +1,736 @@
+{
+	"Careers": {
+		"Colonial Marine": {
+			"long_description": "Most of your friends will never see another world… but not you. As soon as you were old enough, you signed up for the USCMC. The pay is crap and the food is worse, but you've always got a bunk to sleep in and you get to shoot all sorts of weapons at all sorts of things. Life in the Corps is never dull—but the luster has begun to fade. You've seen things that you'll never be able to forget, and plenty you wish you could.",
+			"gameplay_desc": "The muscle and firepower of any crew, the Colonial Marine handles security, defense, and tactical threats in hostile situations. GMs will engage them during combat encounters, boarding actions, or when brute force and battlefield leadership are needed.",
+			"tagline": "First in, last out, and always locked and loaded.",
+			"key_attribute": "Strength",
+			"key_skills": [
+				"Close Combat",
+				"Stamina",
+				"Ranged Combat"
+			],
+			"talents": [
+				"Banter",
+				"Overkill",
+				"Past the Limit"
+			],
+			"personal_agendas": [
+				"You are a decorated hero, you need to defend your reputation. At all costs.",
+				"You once helped cover up a war crime—no one must ever know.",
+				"The death of your buddy has spooked you—now you secretly fear combat and confrontation. You need to overcome your fear."
+			],
+			"starting_gear": [
+				"M41A Pulse Rifle",
+				"M56A2 Smart Gun",
+				"M314 Motion Tracker",
+				"2 G2 Electroshock Grenades",
+				"IRC MK.35 Pressure Suit",
+				"M3 Personnel Armor",
+				"Signal flare",
+				"Deck of cards"
+			],
+			"signature_items": [
+				"Bullet that you survived",
+				"Lost friend's dog tags",
+				"Trophy from a defeated enemy"
+			],
+			"cash": "1d6 x 100"
+		},
+		"Colonial Marshal": {
+			"long_description": "The Frontier can be a lawless place. The Colonial Marines are spread thin— they have neither the time nor inclination to mete out local justice. Not to worry—there's a new sheriff in town, and that's you. Most law enforcement officers on the Frontier are firmly planted deep in the back pocket of one company or another—but not you. You don't take bribes and you never look the other way. You've made a lot of enemies on both sides of the law, but your colony has the lowest crime rate in the system. It's only a matter of time before you piss off the wrong CEO and corporate sends someone to take care of you, but that's okay. You'll be ready.",
+			"gameplay_desc": "Lawkeeper and investigator, the Marshal enforces order and solves problems that others want to ignore. GMs should use them in social or colony-driven plots, criminal investigations, and moral dilemmas where enforcing justice could ruffle dangerous feathers.",
+			"tagline": "The law doesn't sleep, even in deep space.",
+			"key_attribute": "Wits",
+			"key_skills": [
+				"Observation",
+				"Ranged Combat",
+				"Manipulation"
+			],
+			"talents": [
+				"Authority",
+				"Investigator",
+				"Subdue"
+			],
+			"personal_agendas": [
+				"Your longtime partner betrayed you and defected to a crime syndicate. Get even.",
+				"You dream of turning in the badge and settling down in peace. Work towards it.",
+				"You did a bad thing in the past and it has come back to haunt you. You need to decide what you are made of."
+			],
+			"starting_gear": [
+				".357 Magnum Revolver",
+				"Armat Model 37A2 12-Gauge Pump-Action",
+				"Binoculars",
+				"Hi-beam flashlight",
+				"Personal medkit",
+				"Stun baton",
+				"1d6 doses of Neversleep pills",
+				"Hand radio"
+			],
+			"signature_items": [
+				"Photo of a loved one",
+				"Dented flask with an inscription on the front",
+				"News clipping of an unsolved case"
+			],
+			"cash": "1d6 x 100"
+		},
+		"Company Agent": {
+			"long_description": "You're hungry. Space is full of opportunity, and you've been assigned to the Frontier to find the next big thing. From insider information to new mineral deposits—or even a hitherto unknown life-form to exploit—it's up to you to score a win for the company and use it to catapult yourself up the corporate ladder. You tend not to form long-lasting attachments, instead viewing everybody as a commodity to capitalize on. Worry about others later. Right now it's all about the bottom line.",
+			"gameplay_desc": "The face of corporate interests, the Agent pulls strings, exploits opportunities, and negotiates on behalf of shadowy powers. GMs can tap them for intrigue, insider knowledge, company missions, or moments where business and morality clash.",
+			"tagline": "Profit drives the mission—and you drive profit.",
+			"key_attribute": "Wits",
+			"key_skills": [
+				"Comtech",
+				"Observation",
+				"Manipulation"
+			],
+			"talents": [
+				"Cunning",
+				"Personal Safety",
+				"Take Control"
+			],
+			"personal_agendas": [
+				"You are greedy for power and never miss an opportunity to get ahead.",
+				"The Company is holding back information from you. What? And why?",
+				"You are a nice guy, but the Company is blackmailing you to do its dirty work. Get even."
+			],
+			"starting_gear": [
+				"Leather briefcase",
+				"Chrome briefcase",
+				"Gold-plated pen",
+				"Rolex watch",
+				"Data transmitter card with corporate clearance level",
+				"M4A3 Service Pistol",
+				"1d6 doses Neversleep",
+				"1d6 doses Naproleve"
+			],
+			"signature_items": [
+				"Letter of corporate authorization",
+				"Divorce papers",
+				"Employee of the Year award"
+			],
+			"cash": "2d6 x 100"
+		},
+		"Entertainer": {
+			"long_description": "The frontier needs all kinds of people to make life bearable. Everyone knows about the pilots, engineers, Company shills, security guards, scientists, and medics. But that's not you. You're an entertainer—a performer, croupier, unofficial club owner, waiter, barkeep or other profession, one of the unsung folks who make life in a rundown, ratshit place bearable. At the end of a long day the roustabouts and mechanics, lab technicians and cleaners, all need a friendly face and an hour or two where they can forget how tough their life is. Your job is to provide exactly that. That's what you do. You make life bearable on the frontier.",
+			"gameplay_desc": "A social glue in rough places, the Entertainer keeps morale up and opens doors through charm and empathy. GMs will find them useful for gathering rumors, easing tensions, or making valuable allies in inhospitable environments.",
+			"tagline": "When hope fades, you keep the music playing.",
+			"key_attribute": "Empathy",
+			"key_skills": [
+				"Manipulation",
+				"Command",
+				"Observation"
+			],
+			"talents": [
+				"Eagle Eye",
+				"Trustworthy",
+				"Perform",
+				"Hidden Stash",
+				"Quick Draw"
+			],
+			"personal_agendas": [
+				"You hate having to be perpetually happy. But if you keep a smile on your face, you can fleece these people.",
+				"You are working for another government and need to sow dissent without being caught.",
+				"No one knows of your alcohol problem, but damn you need a drink."
+			],
+			"starting_gear": [
+				"Recreational drugs",
+				"Neversleep pills",
+				"Electronic tools",
+				"Maintenance jack",
+				"Personal Med Kit",
+				"Switchblade knife",
+				"Seegson C-Series Magnetic Tape Recorder",
+				"Seegson P-Dat"
+			],
+			"signature_items": [
+				"A silver neck chain given to you by your ex-partner",
+				"An old casino chip worth a lot of money, that you'll never cash in",
+				"A magazine article about the biggest show/casino/establishment on Earth where you hope to work one day"
+			],
+			"cash": "2d6 x 100"
+		},
+		"Kid": {
+			"long_description": "You didn't ask for a Frontier life—your parents brought you into this world kicking and screaming. Grown-ups always ask you what you want to be when you grow up, but all you want to do is be a kid. You used to fantasize about being an adult, able to stay up late and eat junk food whenever you want. Thing is, most of the Frontier adults you know are always miserable and tired. There isn't much to do where you live, so you make your own fun. There's time to grow up later. For now, playing hide-and-seek in the ventilation system seems the way to go.",
+			"gameplay_desc": "Overlooked and underestimated, the Kid excels at going unnoticed and accessing places others can't. GMs can use them for stealthy tasks, mischief, and unique perspectives adults may miss during exploration and social encounters.",
+			"tagline": "Small, fast, and always slipping through the cracks.",
+			"key_attribute": "Agility",
+			"key_skills": [
+				"Mobility",
+				"Survival",
+				"Observation"
+			],
+			"talents": [
+				"Beneath Notice",
+				"Dodge",
+				"Nimble"
+			],
+			"personal_agendas": [
+				"You want to find an adult you can trust -- really trust.",
+				"You have no family left. Make sure you never end up alone again.",
+				"No one give you anything to do, so explore, try things out, make your own entertainment."
+			],
+			"starting_gear": [
+				"Fishing line",
+				"Laser pointer",
+				"Magnet",
+				"Radio-controlled car",
+				"Yo-yo",
+				"Electronic handheld game",
+				"Personal locator beacon",
+				"Coloring pens"
+			],
+			"signature_items": [
+				"Lunchbox covered in stickers",
+				"Favorite doll or action figure",
+				"Bracelet made by older sibling"
+			],
+			"cash": "1d6"
+		},
+		"Medic": {
+			"long_description": "There are a million-and-one ways to die in space, from exposure to vacuum or unknown contagions to vicious organisms or getting accidentally shot by a drunken roughneck. In all these scenarios, you're the one carrying the bandages and adrenaline shots. When someone suffers trauma, it's the first few minutes that matter most. If someone survives long enough to make it to a medpod, you've done your job. You used to be altruistic about Frontier medicine, but you've seen enough to become jaded. Too many people in the Outer Veil are addicted to painkillers, and most colonies are not up to health and safety regulations. That means more people get hurt. Your work is never done.",
+			"gameplay_desc": "When everything falls apart, the Medic keeps people alive long enough to see another day. GMs will rely on them during injuries, hazardous conditions, and time-sensitive crises where quick action means survival.",
+			"tagline": "If they're still breathing, your job's not done.",
+			"key_attribute": "Empathy",
+			"key_skills": [
+				"Mobility",
+				"Observation",
+				"Medical Aid"
+			],
+			"talents": [
+				"Calming Presence",
+				"Compassion",
+				"Field Surgeon"
+			],
+			"personal_agendas": [
+				"You are addicted to a strong painkiller. Protect your stash -- and your secret.",
+				"You have some unusual (but classified) medical reports that the Company is looking for. Find out why they are so important.",
+				"You've sworn an oath never to take a life, and you mean it."
+			],
+			"starting_gear": [
+				"Surgical Kit",
+				"IRC MK.50 Compression Suit",
+				"1d6 doses Naproleve",
+				"1d6 doses Neversleep",
+				"Personal Medkit",
+				"D6 doses experimental X-Drugs",
+				"Samani E-Series Watch",
+				"Hand radio"
+			],
+			"signature_items": [
+				"Framed medical certificate",
+				"Letter from son or daughter",
+				"Last psych evaluation: 'All clear at last'"
+			],
+			"cash": "1d6 x 100"
+		},
+		"Officer": {
+			"long_description": "When everything is going to shit— the Company's holding your crew's pay hostage, there's a mountain of reports to file from that last incident near Thedus, and who knows how many family members back home are weighing on everyone's minds—it's a good thing you spent all those years training to do this for a living. You're the authority figure, the role model, the voice of your superiors, and the enlisted crew's advocate. You're also the butt of all of their jokes around the mess hall… until it all gets so much worse, and they're looking to you for what to do next. Better hope your training has a solution to this one.",
+			"gameplay_desc": "The leader and organizer, the Officer coordinates the crew and keeps discipline when chaos strikes. GMs will turn to them during mission planning, moral conflicts, or when crew unity and authority are tested.",
+			"tagline": "Command is heavy—but someone has to carry it.",
+			"key_attribute": "Empathy",
+			"key_skills": [
+				"Ranged Combat",
+				"Command",
+				"Manipulation"
+			],
+			"talents": [
+				"Field Commander",
+				"Influence",
+				"Pull Rank"
+			],
+			"personal_agendas": [
+				"You come from an officer family. You need to gain promotion or an award -- soon.",
+				"You messed up in the past. Avoid taking the blame for any more mission screw-ups.",
+				"Mistakes are deadly, so don't let anyone under your watch screw up. Make sure they understand why."
+			],
+			"starting_gear": [
+				"M4A3 Service Pistol",
+				"Rexim RXF-M5 EVA Pistol",
+				"Samani E-Series Watch",
+				"Binoculars",
+				"M314 Motion Tracker",
+				"IRC MK.50 Compression Suit",
+				"Seegson P-DAT",
+				"IFF Transponder"
+			],
+			"signature_items": [
+				"Ship's cat",
+				"Letter of recommendation",
+				"ICC Commercial Flight Officer license"
+			],
+			"cash": "2d6 x 100"
+		},
+		"Pilot": {
+			"long_description": "The stars are the limit, and they are limitless. You aren't content to keep your feet on the ground, and on the Frontier, there's no need to. From starfighters to dropships, freighters to frigates, there's always something that needs flying— and some aerospace-stunt that only you can pull off. You aren't in this for the money, although it doesn't hurt. You're a thrill-seeker and an adrenaline junkie. Danger is the rush you live for, but stay frosty. Otherwise, the next time you find yourself dodging through an asteroid belt or seeing the ground rush up to meet you might be your last.",
+			"gameplay_desc": "A vital asset when ships or vehicles are in play, the Pilot ensures smooth (or daring) travel through space and atmosphere alike. GMs will engage them during tense pursuits, hazardous landings, evasive maneuvers, or whenever precision flying or navigation could make the difference between life and death.",
+			"tagline": "No horizon is too far when you're at the stick.",
+			"key_attribute": "Agility",
+			"key_skills": [
+				"Piloting",
+				"Ranged Combat",
+				"Comtech"
+			],
+			"talents": [
+				"Full Throttle",
+				"Like the Back of Your Hand",
+				"Reckless"
+			],
+			"personal_agendas": [
+				"It's about pushing the limit. Taking a chance. Taking risks -- so take a risk.",
+				"You're stubborn and don't like to back down, even if your friends might get hurt.",
+				"You're a loner, always happier when you can do a task without relying on others."
+			],
+			"starting_gear": [
+				"M4A3 Service Pistol",
+				"PR-PUT Portable Remote Pilot Uplink Terminal",
+				"Hand radio",
+				"1d6 flares",
+				"Maintenance Jack",
+				"Seegson P-DAT",
+				"Seegson System Diagnostic Device",
+				"IRC MK.50 Compression Suit"
+			],
+			"signature_items": [
+				"Dashboard dancer",
+				"Pilot's logbook",
+				"Pilot shades"
+			],
+			"cash": "1d6 x 100"
+		},
+		"Roughneck": {
+			"long_description": "Someone has to do the manual labor on the Frontier, and that someone is you. Life has dealt you some harsh blows but you've always struck back. You've been in countless barroom brawls, you swear a lot, and belch at the dinner table. In short, people find you uncouth. You really don't care— you've grown past the need for niceties. No one works harder than you. You are up before first dawn and finish your workday long after second twilight. You are the cog that keeps the Frontier chugging. Your hands are calloused and your face is dirty, and the only thing harder than the work you do is the way you party.",
+			"gameplay_desc": "The backbone of physical labor and tough tasks, the Roughneck handles heavy lifting, engineering gruntwork, and dangerous manual jobs. GMs should call on them for repairs, salvaging, and when brute endurance is key to success.",
+			"tagline": "Built tough for the jobs no one else wants.",
+			"key_attribute": "Strength",
+			"key_skills": [
+				"Heavy Machinery",
+				"Stamina",
+				"Close Combat"
+			],
+			"talents": [
+				"Resilient",
+				"The Long Haul",
+				"True Grit"
+			],
+			"personal_agendas": [
+				"You are a compulsive thrill-seeker. If there is a risk to take, you'll step up and try it.",
+				"You once sacrificed your family for the job. Now you won't let your friends down -- ever.",
+				"Downtime matters. If you can grab a can of Aspen beer (or even Souta Dry, though only if you're desperate) and some time alone, you're happy."
+			],
+			"starting_gear": [
+				"Mechanical Cutting Torch",
+				"Watatsumi DV-303 Bolt Gun",
+				"1d6 doses Hydr8tion",
+				"Maintenance Jack",
+				"Stash of hard liquor",
+				"IRC MK.50 Compression Suit",
+				"Hi-beam flashlight",
+				"Seegson C-Series Magnetic Tape Recorder"
+			],
+			"signature_items": [
+				"Tool belt",
+				"Photo of partner",
+				"Crucifix or other religious symbol"
+			],
+			"cash": "1d6 x 100"
+		},
+		"Scientist": {
+			"long_description": "Every day, new pieces to the puzzle of existence are found on the Frontier. Figuring out what makes them fit together could leap humanity over nature's next hurdle, and you are one thesis away from the respect you deserve. Some find you cold and detached; they don't understand that your passion is knowledge. Whether your field is xenobiology, astrophysics, robotics, or even archaeology, there are countless treasures in space, just waiting for someone to trip over the next asteroid and run right into them. Whether or not that's you, you're still the one who understands them better than anyone.",
+			"gameplay_desc": "The analytical mind of the team, the Scientist deciphers alien phenomena, solves technical problems, and pushes the edge of knowledge. GMs will use them for research scenes, strange discoveries, and missions where intellect is the only way forward.",
+			"tagline": "Unlock the secrets of the void—one discovery at a time.",
+			"key_attribute": "Wits",
+			"key_skills": [
+				"Observation",
+				"Survival",
+				"Comtech"
+			],
+			"talents": [
+				"Analysis",
+				"Breakthrough",
+				"Inquisitive"
+			],
+			"personal_agendas": [
+				"Your last project was stolen from you. Now you keep many of your findings secret.",
+				"You hate authority and go out of your way to be uncooperative if possible.",
+				"You find it hard to delegate to others, even if it means taking on extra work."
+			],
+			"starting_gear": [
+				"Digital video camera",
+				"Hand radio",
+				"Seegson P-DAT",
+				"Neuro Visor",
+				"Seegson System Diagnostic Device",
+				"Personal Data Transmitter",
+				"M314 Motion Tracker",
+				"Personal Medkit"
+			],
+			"signature_items": [
+				"Albert Einstein Award",
+				"Unfinished scientific paper",
+				"Blackmail letters"
+			],
+			"cash": "1d6 x 100"
+		},
+		"Wildcatter": {
+			"long_description": "There is green in them thar hills, money to be made on every rock you can reach, if you know what to look for—and you know what to look for. You may be an independent prospector, seeking out the rich resources that bring wealth to corporations, governments, and a little bit for yourself. Or if you've taken the company dime, you might be a colony surveyor, choosing the best site for building or estimating how much construction might cost, or a land agent—defining who owns what, and who owes how much in rent.",
+			"gameplay_desc": "An expert in spotting untapped resources, the Wildcatter finds value in the forgotten and dangerous. GMs will lean on them during planetary surveys, prospecting runs, and tense negotiations over newly discovered wealth.",
+			"tagline": "If there's fortune to be found, you'll find it first.",
+			"key_attribute": "Agility",
+			"key_skills": [
+				"Piloting",
+				"Survival",
+				"Observation"
+			],
+			"talents": [
+				"The Right Path",
+				"Prospecting",
+				"Miracle Mechanic",
+				"Zero-G Training",
+				"Calm Breather"
+			],
+			"personal_agendas": [
+				"You're gonna get rich right under the company's nose.",
+				"You're tormented by an everlasting itch for things remote, and love to sail forbidden seas.",
+				"People get in the way of exploitation, it would be better to use machines."
+			],
+			"starting_gear": [
+				"Eco All World Survival Suit",
+				"Daihotai 8×8 Tractor",
+				"Pups Mapping Device",
+				"B9 Blast Mining Charges",
+				"Personal Med Kit",
+				"M72 Starshell Flare Pistol",
+				"Heavy Safari Pack",
+				"Samani E-Series Watch"
+			],
+			"signature_items": [
+				"An antique theodolite",
+				"A paper notebook and pencil",
+				"A packet of chewing gum"
+			],
+			"cash": "2d6 x 100"
+		}
+	},
+	"Skills": {
+		"Heavy Machinery": {
+			"attribute": "Strength",
+			"description": "Roll for this skill when you attempt to use, repair, jury-rig or break any kind of heavy machinery.",
+			"extras": [
+				"Gain +1 modification to a later skill roll relating to this one.",
+				"You don't need to roll to overcome the exact same challenge in the future.",
+				"You do it quickly, in half the time it would normally take.",
+				"You break it permanently.",
+				"You act quietly.",
+				"You show off."
+			]
+		},
+		"Stamina": {
+			"attribute": "Strength",
+			"description": "When your physical endurance or vigor is tested, roll for Stamina.",
+			"extras": [
+				"Give a 6 to another PC in the same situation as you.",
+				"Gain a +1 modification to a later skill roll relating to this one.",
+				"You don't need to roll to overcome the exact same challenge in the future.",
+				"You impress someone."
+			]
+		},
+		"Close Combat": {
+			"attribute": "Strength",
+			"description": "Roll for this skill when you attack someone in close combat.",
+			"extras": [
+				"Inflict one more point of damage (can choose this stunt multiple times, if you roll several 6s).",
+				"You outmanoeuvre your enemy and can trade initiative scores with them, taking effect next Round.",
+				"You knock or pull a weapon or other object from your opponent, to the ground.",
+				"During combat, you drop a dropped object counts as a fast action.",
+				"Your opponent is knocked to the ground.",
+				"You hold your human/synthetic opponent in a grapple. They need to win an opposed Close Combat roll against you to break free, and can't perform any other action until they have done so, or until you are Broken or let them go."
+			]
+		},
+		"Mobility": {
+			"attribute": "Agility",
+			"description": "Roll for Mobility when you want to get out of a hazardous situation—be it a risky climb, a dangerous jump, or sneaking past a lurking enemy. When used for stealth, make an opposed roll against your opponent's Observation.",
+			"extras": [
+				"Give a 6 to another PC in the same situation as you.",
+				"Gain a +1 modification to a later skill roll relating to this one.",
+				"You don't need to roll to overcome the exact same challenge in the future.",
+				"You impress someone."
+			]
+		},
+		"Piloting": {
+			"attribute": "Agility",
+			"description": "Roll for Piloting when you attempt any difficult and dangerous maneuver at the helm of any type of spacecraft or ground vehicle.",
+			"extras": [
+				"Gain +1 modification to a later skill roll relating to this one.",
+				"You show off."
+			]
+		},
+		"Ranged Combat": {
+			"attribute": "Agility",
+			"description": "Roll for Ranged Combat to fire all types of ranged weapons.",
+			"extras": [
+				"Inflict one more point of damage (can choose this stunt multiple times, if you roll several 6s).",
+				"You pin down your enemy. They need to make an immediate Panic Roll.",
+				"You position yourself and get to exchange your initiative score with your enemy, taking effect next Round.",
+				"Your target drops a weapon or handheld object - your choice.",
+				"Your opponent falls to the ground or is pushed back (e.g., through an airlock)."
+			]
+		},
+		"Observation": {
+			"attribute": "Wits",
+			"description": "Roll for Observation to spot someone/something sneaking, or when you spot an unknown threat of some kind, to learn more about it.",
+			"extras": [
+				"Get answer to a related question (such as 'Is it coming for me?', 'Are there more close by?', 'How do I get in/past/away?')."
+			]
+		},
+		"Comtech": {
+			"attribute": "Wits",
+			"description": "Roll for Comtech for any challenging attempt to program, repair, decrypt or otherwise manipulate any type of computer or communications technology.",
+			"extras": [
+				"Gain a +1 modification to a later skill roll relating to this one.",
+				"You don't need to roll to overcome the exact same challenge in the future.",
+				"You do it quickly, in half the time it would normally take.",
+				"You get new or unexpected information (GM's choice).",
+				"You hide your tracks."
+			]
+		},
+		"Survival": {
+			"attribute": "Wits",
+			"description": "Roll for Survival when you're in a hazardous planetside environment of some kind and need to figure out a way to stay alive.",
+			"extras": [
+				"Give one to another PC in the same trouble as you.",
+				"Gain a +1 modification to a later skill roll relating to this one.",
+				"You impress someone."
+			]
+		},
+		"Manipulation": {
+			"attribute": "Empathy",
+			"description": "To make another person see things your way, make an opposed roll for Manipulation. Your chances are affected by your negotiating position.",
+			"extras": [
+				"Your opponent does what you want without demanding a favor in return.",
+				"Your opponent does what you want for free, for example giving you some useful piece of information. Details are up to the GM.",
+				"Your opponent is impressed by you and will try to help you later on in some way. Details are up to the GM."
+			]
+		},
+		"Command": {
+			"attribute": "Empathy",
+			"description": "Roll for Command in one of two scenarios: When another character makes a Panic Roll and loses control, you can make a Command roll to return them to their senses. In combat, as a slow action you can bark orders to another character. They must be able to hear you, even if via a comm radio. For every 6 rolled, they get a +1 modification to their roll when carrying out your order.",
+			"extras": []
+		},
+		"Medical Aid": {
+			"attribute": "Empathy",
+			"description": "Roll for Medical Aid in one of two scenarios: A person whose Health has dropped to zero is Broken. If you Successfully roll Medical Aid, they get back on their feet and immediately recover a number of Health points equal to the number of 6s rolled. Roll Medical Aid to save the life of a fallen character who has suffered a critical injury. A failed roll at this point could mean the end for your patient.",
+			"extras": []
+		}
+	},
+	"Talents": {
+		"Colonial Marine": {
+			"Banter": {
+				"description": "Reduce Stress Level by 2 (instead of 1) for all PCs in Short range after a Turn in a safe place."
+			},
+			"Overkill": {
+				"description": "On Panic Roll, may attack nearest enemy instead of panicking."
+			},
+			"Past the Limit": {
+				"description": "May push Strength-based skill rolls twice; each push increases Stress by 1."
+			}
+		},
+		"Colonial Marshal": {
+			"Authority": {
+				"description": "May use Command skill instead of Manipulation to coerce."
+			},
+			"Investigator": {
+				"description": "When spending a Turn investigating, roll Observation; each 6 allows a specific question about the scene."
+			},
+			"Subdue": {
+				"description": "Declare subdue in close combat: +2 to attack, no damage, opponent is grappled if hit."
+			}
+		},
+		"Company Agent": {
+			"Cunning": {
+				"description": "May push Wits-based skill rolls twice; each push increases Stress by 1."
+			},
+			"Personal Safety": {
+				"description": "If in fatal danger and another PC/NPC is in Short range, roll Manipulation to redirect hazard to them; increases Stress by 1."
+			},
+			"Take Control": {
+				"description": "May roll Manipulation using Wits instead of Empathy."
+			}
+		},
+		"Kid": {
+			"Beneath Notice": {
+				"description": "On critical injury, reroll and choose preferred result."
+			},
+			"Dodge": {
+				"description": "May use Mobility to dodge in close combat, only to reduce damage."
+			},
+			"Nimble": {
+				"description": "May push Agility-based skill rolls twice; each push increases Stress by 1."
+			}
+		},
+		"Medic": {
+			"Calming Presence": {
+				"description": "Once per Turn, reduce another character's Stress by 1 in a safe place (not self)."
+			},
+			"Compassion": {
+				"description": "May push Empathy-based skill rolls twice; each push increases Stress by 1."
+			},
+			"Field Surgeon": {
+				"description": "+2 to Medical Aid when treating critical injuries."
+			}
+		},
+		"Officer": {
+			"Field Commander": {
+				"description": "May give orders in combat as a fast action."
+			},
+			"Influence": {
+				"description": "May push Empathy-based skill rolls twice; each push increases Stress by 1."
+			},
+			"Pull Rank": {
+				"description": "May use Command to order non-officers in same organization; roll Command vs Manipulation. If successful, target must obey. Each use increases Stress by 1."
+			}
+		},
+		"Pilot": {
+			"Full Throttle": {
+				"description": "+2 to Piloting for Accelerate/Decelerate actions."
+			},
+			"Like the Back of Your Hand": {
+				"description": "+2 to Piloting with one chosen vehicle or craft. May select multiple times for different vehicles."
+			},
+			"Reckless": {
+				"description": "May push Agility-based skill rolls twice; each push increases Stress by 1."
+			}
+		},
+		"Roughneck": {
+			"Resilient": {
+				"description": "Roll Strength (attribute only) when taking damage; each 6 negates 1 damage. Cannot push."
+			},
+			"The Long Haul": {
+				"description": "Once per session, ignore all Stress 1s from a single roll."
+			},
+			"True Grit": {
+				"description": "May push Strength-based skill rolls twice; each push increases Stress by 1."
+			}
+		},
+		"Scientist": {
+			"Analysis": {
+				"description": "Roll Observation to analyze artifacts/creatures; each 6 allows a specific question. Success reduces Stress for others in Short range by 1; failure increases their Stress by 1."
+			},
+			"Breakthrough": {
+				"description": "Once per session, automatically succeed on an Observation roll."
+			},
+			"Inquisitive": {
+				"description": "May push Wits-based skill rolls twice; each push increases Stress by 1."
+			}
+		},
+		"Wildcatter": {
+			"The Right Path": {
+				"description": "+2 to Survival for navigation."
+			},
+			"Prospecting": {
+				"description": "+2 to Observation to find resources."
+			},
+			"Miracle Mechanic": {
+				"description": "+2 to Heavy Machinery for field repairs."
+			},
+			"Zero-G Training": {
+				"description": "+2 to Mobility in zero-G."
+			},
+			"Calm Breather": {
+				"description": "When making a supply roll for air, roll two fewer dice (min 1)."
+			}
+		},
+		"General": {
+			"Bodyguard": {
+				"description": "If someone in Short range is hit, may roll Mobility to take the hit instead. Can push."
+			},
+			"Calm Breather": {
+				"description": "When making a supply roll for air, roll two fewer dice (min 1)."
+			},
+			"Counselor": {
+				"description": "Once per Turn, use Command to reduce another's Stress; each 6 reduces by 1 extra. Cannot use on self."
+			},
+			"EVA Specialist": {
+				"description": "+2 to Heavy Machinery and Comtech when spacewalking."
+			},
+			"Flyweight": {
+				"description": "May use Agility instead of Strength to block in close combat."
+			},
+			"Hard Hitter": {
+				"description": "+2 to Close Combat if you sacrifice your fast action."
+			},
+			"Healer": {
+				"description": "Halve healing time for critical injuries."
+			},
+			"Hidden Stash": {
+				"description": "Begin each session with an extra reasonable item, chosen or revealed at a dramatic moment."
+			},
+			"Hothead": {
+				"description": "+2 to opposed Manipulation rolls when resisting orders or Pull Rank."
+			},
+			"Light Eater": {
+				"description": "When making a supply roll for food, roll two fewer dice (min 1)."
+			},
+			"Light Sleeper": {
+				"description": "Only need to sleep one Shift every two days."
+			},
+			"Killer": {
+				"description": "On critical injury, may swap D66 dice for result. Humans only."
+			},
+			"Machinegunner": {
+				"description": "No Stress increase when firing on full auto."
+			},
+			"Menacing": {
+				"description": "May use Strength instead of Empathy for Manipulation when threatening. Opponent cannot demand anything in return."
+			},
+			"Merciless": {
+				"description": "May perform coup de grace without Empathy roll. Reduce Stress by 1 each time you break an enemy."
+			},
+			"Nerves of Steel": {
+				"description": "-2 to all Panic Rolls."
+			},
+			"Pack Mule": {
+				"description": "Carry twice as many objects without encumbrance."
+			},
+			"Quick Draw": {
+				"description": "Draw weapon as a free action."
+			},
+			"Rapid Fire": {
+				"description": "May fire pistol/rifle as fast action (instead of slow) at -2."
+			},
+			"Rapid Reload": {
+				"description": "Reload as a fast action."
+			},
+			"Second Wind": {
+				"description": "When Broken, roll Stamina; each 6 restores 1 Health. Once per Turn. No effect on critical injuries."
+			},
+			"Spaceship Commander": {
+				"description": "As ship captain, draw two initiative cards in space combat; choose one."
+			},
+			"Spaceship Mechanic": {
+				"description": "+2 to Heavy Machinery or Comtech to repair spacecraft."
+			},
+			"Spaceship Gunner": {
+				"description": "+2 to Ranged Combat as ship gunner."
+			},
+			"Stealthy": {
+				"description": "+2 to Mobility for moving undetected."
+			},
+			"Stoic": {
+				"description": "May roll Stamina using Wits instead of Strength."
+			},
+			"Tough": {
+				"description": "+2 to max Health."
+			},
+			"Watchful": {
+				"description": "+2 to Observation to spot sneak attacks."
+			},
+			"Weapon Specialist": {
+				"description": "+2 to attacks with one chosen weapon model (may select multiple times for different weapons or unarmed)."
+			},
+			"Zero-G Training": {
+				"description": "+2 to Mobility in zero-G."
+			}
+		}
+	}
+}

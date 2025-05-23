@@ -15,9 +15,6 @@ os.environ["DISCORD_TOKEN"] = os.getenv("DISCORD_TOKEN")
 DISCORD_TOKEN = os.getenv("DISCORD_TOKEN")
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 
-# Debug
-print("DISCORD_TOKEN =", DISCORD_TOKEN)
-
 # Configure Gemini
 genai.configure(api_key=GEMINI_API_KEY)
 model = genai.GenerativeModel(model_name="models/gemini-1.5-flash-latest")
