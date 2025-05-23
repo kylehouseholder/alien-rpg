@@ -24,3 +24,6 @@ build/
 example.txt
 characters.json
 alien-rules.mdc
+
+# GEM-9K runtime memory
+bots/gem_9k/gem9k_conversations.json
