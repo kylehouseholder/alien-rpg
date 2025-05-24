@@ -2,12 +2,17 @@ import os
 import json
 import discord
 import google.generativeai as genai
-from dotenv import load_dotenv
+from dotenv import dotenv_values
 from pathlib import Path
+print(">>> CURRENT WORKING DIRECTORY:", os.getcwd())
+print(">>> DISCORD_TOKEN from env:", os.getenv("DISCORD_TOKEN"))
+print(">>> RUNNING GEM_9K MAIN.PY FROM:", __file__)
 
 # Load environment variables from .env in the same folder as this script
 env_path = Path(__file__).parent / ".env"
-load_dotenv(dotenv_path=env_path)
+env_vars = dotenv_values(env_path)
+os.environ["DISCORD_TOKEN"] = env_vars.get("DISCORD_TOKEN", "")
+os.environ["GEMINI_API_KEY"] = env_vars.get("GEMINI_API_KEY", "")
 
 # Force .env value to override global one
 os.environ["DISCORD_TOKEN"] = os.getenv("DISCORD_TOKEN")
@@ -35,7 +40,9 @@ client = discord.Client(intents=intents)
 
 @client.event
 async def on_ready():
+    print(f"\n{'='*50}")
     print(f"[GEM-9K ONLINE] Logged in as {client.user}")
+    print(f"{'='*50}\n")
 
 @client.event
 async def on_message(message):

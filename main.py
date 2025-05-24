@@ -65,7 +65,13 @@ def log_error(msg: str, enabled: bool = True):
         logger.error(msg)
 
 # Load environment variables
-load_dotenv()
+from dotenv import dotenv_values
+from pathlib import Path
+
+env_vars = dotenv_values(Path(__file__).resolve().parent / ".env.mother.bak")
+import os
+os.environ["DISCORD_TOKEN"] = env_vars.get("DISCORD_TOKEN", "")
+os.environ["OPENAI_API_KEY"] = env_vars.get("OPENAI_API_KEY", "")
 
 # ==============================
 # Alien RPG Discord Bot — FINAL GLOBAL

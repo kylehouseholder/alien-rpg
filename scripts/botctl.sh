@@ -4,7 +4,6 @@ SESSION="alien-bot"
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 SESSION_PATH="$SCRIPT_DIR/sessionBot.sh"
 LOG_PATH="$SCRIPT_DIR/bot.log"
-LINES=10
 
 log() {
     local level="$1"
@@ -22,7 +21,7 @@ case "$1" in
             tmux kill-session -t "$SESSION"
             sleep 0.25
         fi
-        log INFO "Starting $SESSION..."
+        log INFO "Starting $SESSION from $SCRIPT_DIR..."
         bash "$SESSION_PATH" &
         ;;
     stop)
@@ -35,16 +34,7 @@ case "$1" in
         ;;
     log)
         if [ -f "$LOG_PATH" ]; then
-            tail -100 "$LOG_PATH" | awk 'NF' | awk '
-                /Synced [0-9]+ commands/ {lastsync=NR}
-                {lines[NR]=$0}
-                END {
-                    if (lastsync) {
-                        for (i=1; i<=lastsync; i++) print lines[i]
-                    } else {
-                        for (i=1; i<=NR; i++) print lines[i]
-                    }
-                }'
+            tail -100 "$LOG_PATH"
         else
             log INFO "No log file found."
         fi
@@ -52,4 +42,4 @@ case "$1" in
     *)
         log ERROR "Usage: $0 {start|stop|log}"
         ;;
-esac 
+esac
