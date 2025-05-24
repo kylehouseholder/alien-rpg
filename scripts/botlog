@@ -1,0 +1,16 @@
+#!/bin/bash
+BOT="$1"
+case "$BOT" in
+  mother)
+    tail -f ~/alien-rpg/scripts/bot.log
+    ;;
+  jim)
+    tail -f ~/alien-rpg/bots/gem_9k/scripts/bot.log
+    ;;
+  murray)
+    tail -f ~/alien-rpg/bots/murray_2.0/scripts/bot.log
+    ;;
+  *)
+    echo "Usage: botlog {mother|jim|murray}"
+    ;;
+esac

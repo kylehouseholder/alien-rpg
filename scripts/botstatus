@@ -1,0 +1,3 @@
+#!/bin/bash
+echo "[INFO] Checking bot status..."
+tmux ls | grep -E 'alien-bot|gem9k-bot|murray-bot' || echo "No bots are currently running."
